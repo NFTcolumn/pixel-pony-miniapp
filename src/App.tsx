@@ -111,8 +111,8 @@ function App() {
   const [isApproved, setIsApproved] = useState(false)
   const [showTrack, setShowTrack] = useState(false)
   const [showResult, setShowResult] = useState(false)
-  const [raceResult, setRaceResult] = useState<{ won: boolean; winners: number[]; payout: string } | null>(null)
-  const [ethBalance, setEthBalance] = useState('0')
+  const [raceResult] = useState<{ won: boolean; winners: number[]; payout: string } | null>(null)
+  const [ethBalance] = useState('0')
   const [ponyBalance, setPonyBalance] = useState('0')
   const trackInnerRef = useRef<HTMLDivElement>(null)
 
