@@ -1,0 +1,350 @@
+.container {
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.header {
+    text-align: center;
+    padding: 20px 10px;
+    background: #ffffff;
+    border: 2px solid #cccccc;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.header img {
+    max-width: 200px;
+    height: auto;
+    margin-bottom: 10px;
+}
+
+.header .tagline {
+    font-size: 7px;
+    color: #000;
+    margin-top: 5px;
+}
+
+.wallet-info {
+    font-size: 8px;
+    padding: 8px;
+    background: #f0f0f0;
+    border-radius: 5px;
+    margin-top: 10px;
+    color: #000;
+}
+
+.jackpot-display {
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    margin-bottom: 20px;
+    border: 2px solid #cccccc;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.jackpot-label {
+    font-size: 10px;
+    margin-bottom: 5px;
+    color: #000;
+}
+
+.jackpot-amount {
+    font-size: 24px;
+    color: #ff6b6b;
+    font-weight: bold;
+}
+
+.horse-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.horse-card {
+    background: #ffffff;
+    border: 2px solid #cccccc;
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.horse-card:active {
+    transform: scale(0.95);
+}
+
+.horse-card.selected {
+    border-color: #ff6b6b;
+    background: #fff5f5;
+    box-shadow: 0 0 10px rgba(255,107,107,0.5);
+}
+
+.horse-sprite {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 5px;
+    image-rendering: pixelated;
+}
+
+.horse-number {
+    font-size: 12px;
+    color: #000;
+}
+
+.bet-section {
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    border: 2px solid #cccccc;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.bet-label {
+    font-size: 10px;
+    margin-bottom: 10px;
+    text-align: center;
+    color: #000;
+}
+
+.bet-buttons {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.bet-btn {
+    padding: 15px;
+    background: #f0f0f0;
+    border: 2px solid #cccccc;
+    border-radius: 5px;
+    color: #000;
+    font-size: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.bet-btn:active {
+    transform: scale(0.95);
+}
+
+.bet-btn.active {
+    background: #ff6b6b;
+    border-color: #d32f2f;
+    color: #fff;
+}
+
+.balance-info {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 5px;
+    background: #e8f5e9;
+    padding: 8px;
+    border-radius: 5px;
+    font-size: 8px;
+}
+
+.race-btn {
+    width: 100%;
+    padding: 20px;
+    background: #ff6b6b;
+    border: 2px solid #d32f2f;
+    border-radius: 10px;
+    color: #fff;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.race-btn:active {
+    transform: scale(0.98);
+    background: #f55555;
+}
+
+.race-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #cccccc;
+    border-color: #999999;
+}
+
+.status-message {
+    background: #ffffff;
+    padding: 15px;
+    border-radius: 10px;
+    text-align: center;
+    font-size: 10px;
+    line-height: 1.6;
+    margin-bottom: 20px;
+    border: 2px solid #cccccc;
+    color: #000;
+}
+
+.track-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.95);
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.track-container.active {
+    display: flex;
+}
+
+.track-inner {
+    background: #1a1a2e;
+    border-radius: 10px;
+    padding: 20px;
+    width: 100%;
+    max-width: 500px;
+    position: relative;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.track-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #ff6b6b;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    padding: 8px 12px;
+    font-size: 8px;
+    cursor: pointer;
+    z-index: 10;
+}
+
+.track-lane {
+    background: linear-gradient(90deg, #2d3748 0%, #4a5568 50%, #2d3748 100%);
+    height: 24px;
+    margin: 4px 0;
+    border-radius: 5px;
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.lane-number {
+    position: absolute;
+    left: 5px;
+    color: #fff;
+    font-size: 8px;
+    z-index: 1;
+}
+
+.horse-racer {
+    position: absolute;
+    left: 25px;
+    width: 24px;
+    height: 24px;
+    image-rendering: pixelated;
+    transition: left 0.1s linear;
+}
+
+.horse-racer.winner {
+    filter: drop-shadow(0 0 8px #ffeb3b);
+}
+
+.horse-racer.player-horse {
+    filter: drop-shadow(0 0 8px #00ff00);
+}
+
+.finish-line {
+    position: absolute;
+    right: 10px;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: repeating-linear-gradient(45deg, #fff, #fff 8px, #000 8px, #000 16px);
+}
+
+.result-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.9);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.result-modal.active {
+    display: flex;
+}
+
+.result-content {
+    background: #ffffff;
+    padding: 30px;
+    border-radius: 15px;
+    text-align: center;
+    border: 2px solid #cccccc;
+    max-width: 90%;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+}
+
+.result-emoji {
+    font-size: 48px;
+    margin-bottom: 15px;
+}
+
+.result-title {
+    font-size: 20px;
+    margin-bottom: 15px;
+    color: #000;
+}
+
+.result-details {
+    font-size: 10px;
+    line-height: 1.8;
+    margin-bottom: 20px;
+    color: #000;
+}
+
+.close-btn {
+    padding: 15px 30px;
+    background: #ff6b6b;
+    color: #fff;
+    border: 2px solid #d32f2f;
+    border-radius: 8px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.loading {
+    text-align: center;
+    padding: 20px;
+    font-size: 10px;
+}
+
+.spinner {
+    border: 3px solid rgba(255,255,255,0.3);
+    border-top: 3px solid #fff;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    animation: spin 1s linear infinite;
+    margin: 10px auto;
+}
+
+.hidden {
+    display: none;
+}

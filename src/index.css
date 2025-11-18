@@ -1,0 +1,26 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Press Start 2P', monospace;
+}
+
+body {
+    background: #bdc3ff;
+    color: #000;
+    overflow-x: hidden;
+    min-height: 100vh;
+    padding: 10px;
+}
+
+#root {
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
