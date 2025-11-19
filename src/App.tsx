@@ -432,10 +432,10 @@ function App() {
             ? `${address.slice(0, 6)}...${address.slice(-4)} | Base`
             : 'Connecting wallet...'}
         </div>
-        {isConnected && (
+        {isConnected && address && (
           <div className="balance-info">
-            <span>💰 {ethBalance} ETH</span>
-            <span>🐴 {ponyBalance} PONY</span>
+            <span>💰 {ethBalance || '0.0000'} ETH</span>
+            <span>🐴 {ponyBalance || '0'} PONY</span>
           </div>
         )}
       </div>
