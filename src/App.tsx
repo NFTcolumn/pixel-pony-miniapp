@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useAccount, useConnect, useReadContract, useWriteContract, useWaitForTransactionReceipt, usePublicClient } from 'wagmi'
+import { useAccount, useConnect, useReadContract, useWriteContract, useWaitForTransactionReceipt, usePublicClient, useBalance } from 'wagmi'
 import { parseEther, formatEther } from 'viem'
 import { sdk } from '@farcaster/miniapp-sdk'
 import './App.css'
@@ -113,7 +113,7 @@ function App() {
   const [showTrack, setShowTrack] = useState(false)
   const [showResult, setShowResult] = useState(false)
   const [raceResult, setRaceResult] = useState<{ won: boolean; winners: number[]; payout: string } | null>(null)
-  const [ethBalance] = useState('0')
+  const [ethBalance, setEthBalance] = useState('0')
   const [ponyBalance, setPonyBalance] = useState('0')
   const [isRacing, setIsRacing] = useState(false)
   const [raceHash, setRaceHash] = useState<`0x${string}` | null>(null)
@@ -145,6 +145,12 @@ function App() {
     address: PIXEL_PONY_ADDRESS,
     abi: PIXEL_PONY_ABI,
     functionName: 'getGameStats'
+  })
+
+  // Read ETH balance
+  const { data: ethBalanceData, refetch: refetchEthBalance } = useBalance({
+    address: address,
+    query: { enabled: !!address }
   })
 
   // Read PONY balance
@@ -182,6 +188,12 @@ function App() {
   }, [allowance, selectedBet])
 
   // Update balances
+  useEffect(() => {
+    if (ethBalanceData) {
+      setEthBalance(parseFloat(formatEther(ethBalanceData.value)).toFixed(4))
+    }
+  }, [ethBalanceData])
+
   useEffect(() => {
     if (ponyBalanceData) {
       setPonyBalance(formatPony(formatEther(ponyBalanceData)))
@@ -316,6 +328,7 @@ function App() {
         // Refresh balances
         refetchJackpot()
         refetchPonyBalance()
+        refetchEthBalance()
 
         // Reset race state
         setIsRacing(false)
@@ -334,7 +347,7 @@ function App() {
     }
 
     handleRaceComplete()
-  }, [isConfirmed, hash, publicClient, address, isRacing, raceHash, refetchJackpot, refetchPonyBalance, resetWrite])
+  }, [isConfirmed, hash, publicClient, address, isRacing, raceHash, refetchJackpot, refetchPonyBalance, refetchEthBalance, resetWrite])
 
   // Track when we start a race transaction
   useEffect(() => {
@@ -402,6 +415,7 @@ function App() {
     setShowTrack(false)
     refetchJackpot()
     refetchPonyBalance()
+    refetchEthBalance()
   }
 
   const canApprove = selectedHorse !== null && selectedBet !== null && address && !isApproved && !isRacing
