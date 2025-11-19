@@ -1,0 +1,1462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel Pony Racing - Play Now!</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Pixel Ponies">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://pixel-pony-frontend.onrender.com/game">
+    <meta property="og:title" content="Pixel Ponies - 16 Ponies Racing On Base">
+    <meta property="og:description" content="Instant 16-horse racing on Base. Bet on your pony and win 10x for 1st, 2.5x for 2nd, 1x for 3rd!">
+    <meta property="og:image" content="https://pixel-pony-frontend.onrender.com/splash-1200x630.png">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Pixel Ponies - 16 Ponies Racing On Base">
+    <meta name="twitter:description" content="Instant 16-horse racing on Base. Bet on your pony and win 10x for 1st, 2.5x for 2nd, 1x for 3rd!">
+    <meta name="twitter:image" content="https://pixel-pony-frontend.onrender.com/splash-1200x630.png">
+
+    <!-- Farcaster Mini App -->
+    <meta property="fc:frame" content="vNext" />
+    <meta property="fc:frame:manifest" content="https://pixel-pony-frontend.onrender.com/.well-known/farcaster.json" />
+
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap">
+    <style>
+        /* Retro pixel overrides - MUST BE ON TOP */
+        * {
+            font-family: 'Press Start 2P', monospace !important;
+        }
+        body {
+            background: #bdc3ff !important;
+            font-size: 8px !important;
+            padding: 8px !important;
+        }
+        button, .wallet-btn {
+            background: #ff6b6b !important;
+            border: 2px solid #d32f2f !important;
+            border-radius: 0 !important;
+            font-size: 8px !important;
+            box-shadow: none !important;
+            padding: 8px 12px !important;
+        }
+        button:hover, .wallet-btn:hover {
+            background: #f55555 !important;
+            box-shadow: none !important;
+        }
+        header {
+            background: transparent !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            padding: 16px !important;
+            padding-top: 116px !important;
+        }
+        h1 {
+            color: #333333 !important;
+            font-size: 16px !important;
+            text-shadow: 1px 1px 0px #ffffff !important;
+        }
+        h2 {
+            color: #333333 !important;
+            font-size: 10px !important;
+        }
+        .game-section, .wallet-section, section {
+            background: #ffffff !important;
+            border: 2px solid #cccccc !important;
+            border-radius: 0 !important;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1) !important;
+            padding: 16px !important;
+            margin-bottom: 16px !important;
+        }
+        .wallet-info-compact, .balance-item {
+            border-radius: 0 !important;
+            border: 2px solid #cccccc !important;
+        }
+        .stat-box {
+            background: #f0f0f0 !important;
+            border: 2px solid #cccccc !important;
+            border-radius: 0 !important;
+        }
+        .stat-value {
+            color: #ff6b6b !important;
+        }
+        .horse-option {
+            border: 2px solid #cccccc !important;
+            border-radius: 0 !important;
+        }
+        .horse-option.selected {
+            background: #ff6b6b !important;
+            border-color: #d32f2f !important;
+        }
+        input[type="number"], select {
+            font-family: 'Press Start 2P', monospace !important;
+            font-size: 6px !important;
+            border: 2px solid #cccccc !important;
+            border-radius: 0 !important;
+        }
+    </style>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .wallet-connect-top {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .wallet-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-family: 'Courier New', monospace;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .wallet-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .wallet-info-compact {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            background: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            font-size: 0.85em;
+        }
+
+        .wallet-info-compact .balance-compact {
+            padding: 4px 10px;
+            background: #f7f7f7;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+
+        header {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            padding-top: 60px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            color: #667eea;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .wallet-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .wallet-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-family: 'Courier New', monospace;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .balance-info {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .balance-item {
+            background: #f7f7f7;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+
+        .game-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        .game-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-box {
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .betting-section {
+            display: grid;
+            gap: 20px;
+        }
+
+        .bet-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        input[type="number"] {
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 1em;
+            font-family: 'Courier New', monospace;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        select {
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 1em;
+            font-family: 'Courier New', monospace;
+            background: white;
+            cursor: pointer;
+        }
+
+        .horse-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .horse-option {
+            background: #f7f7f7;
+            padding: 15px 10px;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .horse-option:hover {
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            transform: translateY(-2px);
+        }
+
+        .horse-option.selected {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #764ba2;
+            font-weight: bold;
+        }
+
+        .horse-preview {
+            width: 48px;
+            height: 48px;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+
+        .status-message {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #c3e6cb;
+        }
+
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+        }
+
+        .status-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 2px solid #bee5eb;
+        }
+
+        .race-results {
+            background: #f7f7f7;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .race-result-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Race Track Visualization */
+        .race-track-section {
+            background: #2d3748;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .track-container {
+            background: linear-gradient(to bottom, #1a202c 0%, #2d3748 100%);
+            border: 3px solid #4a5568;
+            border-radius: 10px;
+            padding: 20px;
+            position: relative;
+            min-height: 400px;
+        }
+
+        .track-lane {
+            background: linear-gradient(90deg, #2d3748 0%, #4a5568 50%, #2d3748 100%);
+            height: 20px;
+            margin: 4px 0;
+            border-radius: 5px;
+            position: relative;
+            border: 1px solid #718096;
+        }
+
+        .horse-racer {
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            transition: left 0.1s linear;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+            width: 32px;
+            height: 32px;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+
+        .horse-racer.player-horse {
+            filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.8)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .horse-racer.winner {
+            animation: winner-pulse 0.5s ease-in-out infinite;
+        }
+
+        @keyframes winner-pulse {
+            0%, 100% {
+                transform: translateY(-50%) scale(1);
+                filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5)) brightness(1);
+            }
+            50% {
+                transform: translateY(-50%) scale(1.3);
+                filter: drop-shadow(0 0 12px rgba(255, 215, 0, 1)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5)) brightness(1.2);
+            }
+        }
+
+        .finish-line {
+            position: absolute;
+            right: 30px;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: repeating-linear-gradient(
+                45deg,
+                #fff,
+                #fff 10px,
+                #000 10px,
+                #000 20px
+            );
+        }
+
+        .start-line {
+            position: absolute;
+            left: 30px;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: repeating-linear-gradient(
+                45deg,
+                #4ade80,
+                #4ade80 10px,
+                #22c55e 10px,
+                #22c55e 20px
+            );
+        }
+
+        .race-status-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            z-index: 10;
+        }
+
+        .race-status-text {
+            color: white;
+            font-size: 2em;
+            font-weight: bold;
+            text-align: center;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+        }
+
+        .lane-number {
+            position: absolute;
+            left: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #a0aec0;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .position-badge {
+            position: absolute;
+            right: -25px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #f59e0b;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: bold;
+            display: none;
+        }
+
+        .position-badge.first {
+            background: #fbbf24;
+            display: inline-block;
+        }
+
+        .position-badge.second {
+            background: #cbd5e0;
+            color: #2d3748;
+            display: inline-block;
+        }
+
+        .position-badge.third {
+            background: #cd7f32;
+            display: inline-block;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .wallet-connect-top {
+                position: static;
+                justify-content: center;
+                flex-wrap: wrap;
+                margin-bottom: 15px;
+            }
+
+            .wallet-info-compact {
+                font-size: 0.75em;
+            }
+
+            header {
+                padding-top: 30px;
+            }
+
+            .bet-controls {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            input[type="number"] {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Compact Wallet Top Right -->
+        <div class="wallet-connect-top">
+            <button id="connectBtn" class="wallet-btn">Connect Wallet</button>
+            <div id="balanceInfo" class="wallet-info-compact hidden">
+                <span id="walletAddress" style="color: #667eea; font-weight: bold;">-</span>
+                <span class="balance-compact">💰 <span id="ethBalance">0</span></span>
+                <span class="balance-compact">🐴 <span id="ponyBalance">0</span></span>
+            </div>
+        </div>
+
+        <header>
+            <img src="sprites/logo.png" alt="Pixel Pony Racing" style="max-width: 400px; width: 100%; height: auto; margin-bottom: 15px;">
+            <p style="font-size: 1.2em; font-weight: bold;">16 Pixelated Ponies Racing On-Chain For No Reason</p>
+            <p style="color: #666; margin-top: 10px;">Built on Base Mainnet</p>
+        </header>
+
+        <!-- Game Stats -->
+        <div class="game-section">
+            <h2>📊 Game Stats</h2>
+            <div class="game-stats">
+                <div class="stat-box">
+                    <div class="stat-label">Total Races</div>
+                    <div class="stat-value" id="totalRaces">-</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Jackpot Pool</div>
+                    <div class="stat-value" id="jackpotPool">-</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Entry Fee</div>
+                    <div class="stat-value" id="entryFee">-</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Your Tickets</div>
+                    <div class="stat-value" id="userTickets">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Race Track Visualization -->
+        <div class="race-track-section" id="raceTrackSection" style="display: none;">
+            <h2 style="color: white; margin-bottom: 15px;">🏁 Race in Progress</h2>
+            <div class="track-container" id="trackContainer">
+                <div class="start-line"></div>
+                <div class="finish-line"></div>
+                <div id="raceLanes"></div>
+                <div class="race-status-overlay" id="raceStatusOverlay">
+                    <div class="race-status-text" id="raceStatusText">Get Ready...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Betting Section -->
+        <div class="game-section">
+            <h2>🎮 Place Your Bet</h2>
+
+            <div id="statusMessage"></div>
+
+            <div class="betting-section">
+                <div class="bet-controls">
+                    <select id="betAmountSelect">
+                        <option value="1000000000">1 Billion PONY</option>
+                        <option value="5000000000">5 Billion PONY</option>
+                        <option value="10000000000">10 Billion PONY</option>
+                        <option value="25000000000">25 Billion PONY</option>
+                        <option value="50000000000">50 Billion PONY (MAX)</option>
+                    </select>
+                    <input type="number" id="customBetAmount" placeholder="Or enter custom amount (billions)">
+                </div>
+
+                <h3 style="margin-top: 20px; color: #666;">Select Your Pony (1-16):</h3>
+                <div class="horse-grid" id="horseGrid">
+                    <!-- Ponies will be generated by JS -->
+                </div>
+
+                <div style="display: flex; gap: 15px; margin-top: 20px;">
+                    <button id="approveBtn" style="flex: 1;" disabled>1. Approve PONY</button>
+                    <button id="betBtn" style="flex: 1;" disabled>2. Place Bet & Race!</button>
+                </div>
+
+                <div style="margin-top: 15px; padding: 15px; background: #fff3cd; border: 2px solid #ffc107; border-radius: 10px;">
+                    <strong>⚠️ IMPORTANT - MetaMask Users:</strong>
+                    <p style="margin-top: 8px; color: #856404; line-height: 1.6;">
+                        <strong>DO NOT edit gas settings in MetaMask!</strong><br>
+                        The app automatically sets high gas fees (15x-30x buffer) to ensure fast confirmation on Base.<br>
+                        Even if it looks high, Base gas is still cheap (~$0.50-2.00 total).<br>
+                        <strong>Just click "Confirm" - don't touch Advanced/Edit!</strong>
+                    </p>
+                </div>
+
+                <div style="margin-top: 15px; padding: 15px; background: #f7f7f7; border-radius: 10px;">
+                    <strong>How to Play:</strong>
+                    <ol style="margin-left: 20px; margin-top: 10px; line-height: 1.8;">
+                        <li>Connect your wallet (must be on Base Mainnet)</li>
+                        <li>Select bet amount and choose a pony</li>
+                        <li>Click "Approve PONY" (only needed once per session)</li>
+                        <li><strong>When MetaMask pops up: Just click CONFIRM - don't edit gas!</strong></li>
+                        <li>Click "Place Bet & Race!" to start racing</li>
+                        <li>Win 10x for 1st, 2.5x for 2nd, 1x for 3rd place!</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+
+        <!-- Race Results -->
+        <div class="game-section">
+            <h2>🏆 Recent Race Results</h2>
+            <div id="raceResults" class="race-results">
+                <p style="text-align: center; color: #666;">No races yet. Place a bet to start racing!</p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer style="background: #ffffff; border: 2px solid #cccccc; margin-top: 24px; padding: 16px; text-align: center; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+            <div style="display: flex; justify-content: center; gap: 16px; flex-wrap: wrap; margin-bottom: 12px;">
+                <a href="/" style="color: #000000; text-decoration: none; font-size: 8px;">🏠 HOME</a>
+                <a href="/buy" style="color: #ff6b6b; text-decoration: none; font-size: 8px;">💰 BUY $PONY</a>
+                <a href="/whitepaper" style="color: #000000; text-decoration: none; font-size: 8px;">📄 WHITEPAPER</a>
+                <a href="/terms" style="color: #000000; text-decoration: none; font-size: 8px;">⚖️ TERMS</a>
+                <a href="/privacy" style="color: #000000; text-decoration: none; font-size: 8px;">🔒 PRIVACY</a>
+            </div>
+            <p style="font-size: 6px; color: #666666; line-height: 1.6;">
+                Pixel Ponies © 2025 | 16 Pixelated Ponies Racing On-Chain For No Reason<br>
+                Built on Base Network | Not financial advice | Play responsibly
+            </p>
+        </footer>
+    </div>
+
+    <!-- Ethers.js -->
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+
+    <!-- WalletConnect for mobile support -->
+    <script src="https://cdn.jsdelivr.net/npm/@walletconnect/web3-provider@1.8.0/dist/umd/index.min.js"></script>
+
+    <!-- Farcaster SDK -->
+    <script type="module">
+        import { sdk } from 'https://esm.sh/@farcaster/miniapp-sdk';
+        window.farcasterSdk = sdk;
+
+        // Initialize Farcaster SDK
+        (async () => {
+            try {
+                console.log('=== FARCASTER SDK INITIALIZATION ===');
+                console.log('SDK loaded:', !!sdk);
+                console.log('SDK wallet available:', !!sdk.wallet);
+                console.log('SDK wallet methods:', Object.keys(sdk.wallet || {}));
+
+                // Get context to check capabilities
+                const context = await sdk.context;
+                console.log('Farcaster context:', context);
+                console.log('User FID:', context.user?.fid);
+
+                // Call ready() to hide loading screen
+                await sdk.actions.ready();
+                console.log('✅ Farcaster Mini App ready');
+
+                // Try to get wallet provider early
+                if (sdk.wallet && typeof sdk.wallet.getEthereumProvider === 'function') {
+                    const provider = await sdk.wallet.getEthereumProvider();
+                    console.log('Early wallet provider check:', !!provider);
+                    if (provider) {
+                        console.log('Provider has request method:', typeof provider.request === 'function');
+                    }
+                }
+
+                // Show debug info on mobile
+                window.showMobileDebug = (message, isError = false) => {
+                    let debugPanel = document.getElementById('mobileDebug');
+                    if (!debugPanel) {
+                        debugPanel = document.createElement('div');
+                        debugPanel.id = 'mobileDebug';
+                        debugPanel.style.cssText = 'position: fixed; top: 60px; left: 10px; right: 10px; background: rgba(0,0,0,0.9); color: #0f0; padding: 10px; font-size: 10px; font-family: monospace; max-height: 200px; overflow-y: auto; z-index: 10000; border: 2px solid #0f0;';
+                        document.body.appendChild(debugPanel);
+                    }
+                    const timestamp = new Date().toLocaleTimeString();
+                    const color = isError ? '#f00' : '#0f0';
+                    debugPanel.innerHTML += `<div style="color: ${color};">[${timestamp}] ${message}</div>`;
+                    debugPanel.scrollTop = debugPanel.scrollHeight;
+                };
+
+                window.showMobileDebug('✅ Farcaster SDK initialized');
+            } catch (error) {
+                console.log('Not running in Farcaster context or error:', error);
+                if (window.showMobileDebug) {
+                    window.showMobileDebug('❌ SDK Error: ' + error.message, true);
+                }
+            }
+        })();
+    </script>
+
+    <script>
+        // Contract Addresses on Base Mainnet
+        const PONY_TOKEN_ADDRESS = "0x6ab297799335E7b0f60d9e05439Df156cf694Ba7";
+        const PIXEL_PONY_ADDRESS = "0x2B4652Bd6149E407E3F57190E25cdBa1FC9d37d8";
+        const BASE_MAINNET_CHAIN_ID = 8453;
+
+        // Contract ABIs
+        const PONY_TOKEN_ABI = [
+            "function balanceOf(address owner) view returns (uint256)",
+            "function approve(address spender, uint256 amount) returns (bool)",
+            "function allowance(address owner, address spender) view returns (uint256)"
+        ];
+
+        const PIXEL_PONY_ABI = [
+            "function placeBetAndRace(uint256 _horseId, uint256 _amount) external payable returns (uint256 raceId)",
+            "function getGameStats() view returns (uint256 totalRacesCount, uint256 totalTicketsCount, uint256 jackpotAmount, uint256 totalPlayers)",
+            "function baseFeeAmount() view returns (uint256)",
+            "function getUserTickets(address _user) view returns (uint256[])",
+            "event RaceExecuted(uint256 indexed raceId, address indexed player, uint256 horseId, uint256[3] winners, uint256 payout, bool won)"
+        ];
+
+        // Global state
+        let provider, signer, ponyToken, pixelPony, userAddress;
+        let selectedHorse = null;
+        let walletConnectProvider = null; // Store WalletConnect provider if used
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeHorseGrid();
+            document.getElementById('connectBtn').addEventListener('click', connectWallet);
+            document.getElementById('approveBtn').addEventListener('click', approvePony);
+            document.getElementById('betBtn').addEventListener('click', placeBet);
+
+            // Load stats without wallet
+            loadGameStats();
+
+            // Refresh stats every 30 seconds
+            setInterval(loadGameStats, 30000);
+        });
+
+        // Initialize horse grid
+        function initializeHorseGrid() {
+            const grid = document.getElementById('horseGrid');
+
+            for (let i = 0; i < 16; i++) {
+                // Use sprites 1-16 for the selection grid
+                const spriteNum = (i % 30) + 1;
+
+                const div = document.createElement('div');
+                div.className = 'horse-option';
+                div.innerHTML = `
+                    <img src="sprites/${spriteNum}.png" alt="Pony ${i + 1}" class="horse-preview">
+                    <div>Pony #${i + 1}</div>
+                `;
+                div.onclick = () => selectHorse(i, div);
+                grid.appendChild(div);
+            }
+        }
+
+        // Select horse
+        function selectHorse(id, element) {
+            selectedHorse = id;
+            document.querySelectorAll('.horse-option').forEach(el => el.classList.remove('selected'));
+            element.classList.add('selected');
+
+            // Enable approve button if wallet connected
+            if (userAddress) {
+                document.getElementById('approveBtn').disabled = false;
+            }
+        }
+
+        // Show status message
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.className = `status-message status-${type}`;
+            statusDiv.textContent = message;
+            statusDiv.style.display = 'block';
+
+            if (type === 'success' || type === 'error') {
+                setTimeout(() => {
+                    statusDiv.style.display = 'none';
+                }, 8000);
+            }
+        }
+
+        // Detect if user is on mobile
+        function isMobile() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
+
+        // Connect Wallet
+        async function connectWallet() {
+            try {
+                showStatus('Connecting wallet...', 'info');
+                console.log('Connecting to wallet...');
+
+                // Check if mobile and no ethereum provider
+                if (isMobile() && typeof window.ethereum === 'undefined') {
+                    console.log('Mobile device detected, using WalletConnect...');
+
+                    // Initialize WalletConnect provider
+                    walletConnectProvider = new WalletConnectProvider.default({
+                        rpc: {
+                            8453: "https://mainnet.base.org",
+                        },
+                        chainId: BASE_MAINNET_CHAIN_ID,
+                        qrcode: true,
+                    });
+
+                    // Enable session (triggers deep link or QR Code modal)
+                    await walletConnectProvider.enable();
+                    console.log('WalletConnect enabled');
+
+                    // Create ethers provider from WalletConnect
+                    provider = new ethers.providers.Web3Provider(walletConnectProvider);
+                    console.log('Provider created via WalletConnect');
+                } else {
+                    // Desktop or browser with injected provider
+                    if (typeof window.ethereum === 'undefined') {
+                        showStatus('Please install MetaMask or another Web3 wallet!', 'error');
+                        return;
+                    }
+
+                    provider = new ethers.providers.Web3Provider(window.ethereum);
+                    console.log('Provider created');
+
+                    await provider.send("eth_requestAccounts", []);
+                    console.log('Accounts requested');
+                }
+
+                signer = provider.getSigner();
+                userAddress = await signer.getAddress();
+                console.log('User address:', userAddress);
+
+                // Check network
+                const network = await provider.getNetwork();
+                console.log('Network detected:', network.chainId, 'Expected:', BASE_MAINNET_CHAIN_ID);
+
+                if (network.chainId !== BASE_MAINNET_CHAIN_ID) {
+                    console.log('Wrong network! Requesting switch...');
+                    showStatus('Please switch to Base Mainnet in your wallet!', 'error');
+
+                    // Only try to switch network if using window.ethereum
+                    if (window.ethereum) {
+                        showStatus('Switching to Base Mainnet...', 'info');
+                        try {
+                            await window.ethereum.request({
+                                method: 'wallet_switchEthereumChain',
+                                params: [{ chainId: '0x2105' }], // 8453 in hex
+                            });
+                            console.log('Network switched successfully');
+                            // Wait a moment for the network to switch
+                            await new Promise(resolve => setTimeout(resolve, 1000));
+                            // Recreate provider after network switch
+                            provider = new ethers.providers.Web3Provider(window.ethereum);
+                            signer = provider.getSigner();
+                        } catch (switchError) {
+                            console.error('Network switch error:', switchError);
+                            if (switchError.code === 4902) {
+                                showStatus('Please add Base Mainnet to your wallet!', 'error');
+                            }
+                            return;
+                        }
+                    } else {
+                        // WalletConnect - user needs to switch manually
+                        showStatus('Please switch to Base Mainnet in your wallet app!', 'error');
+                        return;
+                    }
+                }
+
+                // Initialize contracts
+                console.log('Initializing contracts...');
+                console.log('PONY Token Address:', PONY_TOKEN_ADDRESS);
+                console.log('Pixel Pony Address:', PIXEL_PONY_ADDRESS);
+
+                ponyToken = new ethers.Contract(PONY_TOKEN_ADDRESS, PONY_TOKEN_ABI, signer);
+                pixelPony = new ethers.Contract(PIXEL_PONY_ADDRESS, PIXEL_PONY_ABI, signer);
+
+                console.log('Contracts initialized');
+
+                // Update UI
+                document.getElementById('connectBtn').textContent = '✓ Connected';
+                document.getElementById('connectBtn').style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+                document.getElementById('walletAddress').textContent = userAddress.slice(0, 6) + '...' + userAddress.slice(-4);
+
+                console.log('Removing hidden class from balanceInfo...');
+                const balanceInfo = document.getElementById('balanceInfo');
+                console.log('Balance info element:', balanceInfo);
+                console.log('Current classes:', balanceInfo.className);
+                balanceInfo.classList.remove('hidden');
+                console.log('After removing hidden:', balanceInfo.className);
+
+                // Load balances
+                console.log('Loading balances...');
+                await loadBalances();
+
+                console.log('Loading game stats...');
+                await loadGameStats();
+
+                console.log('Loading user tickets...');
+                await loadUserTickets();
+
+                showStatus('Wallet connected successfully!', 'success');
+                console.log('Connection complete!');
+
+            } catch (error) {
+                console.error('Connection error:', error);
+                showStatus('Failed to connect wallet: ' + error.message, 'error');
+            }
+        }
+
+        // Load balances
+        async function loadBalances() {
+            try {
+                console.log('Loading balances for:', userAddress);
+                console.log('Provider:', provider);
+                console.log('Token contract:', ponyToken);
+
+                const ethBal = await provider.getBalance(userAddress);
+                console.log('ETH Balance (raw):', ethBal.toString());
+
+                const ponyBal = await ponyToken.balanceOf(userAddress);
+                console.log('PONY Balance (raw):', ponyBal.toString());
+
+                const ethFormatted = parseFloat(ethers.utils.formatEther(ethBal)).toFixed(4);
+                const ponyFormatted = (parseFloat(ethers.utils.formatEther(ponyBal)) / 1e9).toFixed(2);
+
+                console.log('ETH Balance (formatted):', ethFormatted);
+                console.log('PONY Balance (formatted):', ponyFormatted);
+
+                document.getElementById('ethBalance').textContent = ethFormatted + ' ETH';
+                document.getElementById('ponyBalance').textContent = ponyFormatted + 'B';
+
+                console.log('Balances updated in UI');
+            } catch (error) {
+                console.error('Error loading balances:', error);
+                showStatus('Error loading balances: ' + error.message, 'error');
+            }
+        }
+
+        // Load game stats
+        async function loadGameStats() {
+            try {
+                // Create a read-only provider if we don't have one yet
+                const readProvider = provider || new ethers.providers.JsonRpcProvider('https://mainnet.base.org');
+                const readOnlyPixelPony = new ethers.Contract(PIXEL_PONY_ADDRESS, PIXEL_PONY_ABI, readProvider);
+
+                const stats = await readOnlyPixelPony.getGameStats();
+                const baseFee = await readOnlyPixelPony.baseFeeAmount();
+
+                document.getElementById('totalRaces').textContent = stats.totalRacesCount.toString();
+                document.getElementById('jackpotPool').textContent = (parseFloat(ethers.utils.formatEther(stats.jackpotAmount)) / 1e9).toFixed(2) + 'B PONY';
+                document.getElementById('entryFee').textContent = ethers.utils.formatEther(baseFee) + ' ETH';
+            } catch (error) {
+                console.error('Error loading game stats:', error);
+            }
+        }
+
+        // Load user tickets
+        async function loadUserTickets() {
+            try {
+                const tickets = await pixelPony.getUserTickets(userAddress);
+                document.getElementById('userTickets').textContent = tickets.length;
+            } catch (error) {
+                console.error('Error loading tickets:', error);
+            }
+        }
+
+        // Approve PONY
+        async function approvePony() {
+            console.log('=== APPROVE FUNCTION CALLED ===');
+            console.log('userAddress:', userAddress);
+            console.log('selectedHorse:', selectedHorse);
+
+            if (!userAddress || selectedHorse === null) {
+                console.log('Missing requirements!');
+                showStatus('Please connect wallet and select a pony first!', 'error');
+                return;
+            }
+
+            try {
+                showStatus('Approving PONY tokens...', 'info');
+                console.log('Starting approval process...');
+
+                const betAmountSelect = document.getElementById('betAmountSelect').value;
+                const customAmount = document.getElementById('customBetAmount').value;
+
+                console.log('Bet amount select:', betAmountSelect);
+                console.log('Custom amount:', customAmount);
+
+                let betAmount;
+                if (customAmount && parseFloat(customAmount) > 0) {
+                    // Custom amount is in billions, convert to wei
+                    betAmount = ethers.utils.parseEther(customAmount).mul(1e9);
+                    console.log('Using custom amount:', customAmount, 'billion PONY');
+                } else {
+                    // Select value is already in billions (1000000000 = 1B), just add decimals
+                    betAmount = ethers.utils.parseEther(betAmountSelect);
+                    console.log('Using select amount:', betAmountSelect, 'PONY (raw)');
+                }
+
+                console.log('Bet amount (wei):', betAmount.toString());
+
+                // Check balance
+                console.log('Checking balance...');
+                const balance = await ponyToken.balanceOf(userAddress);
+                console.log('Your PONY balance:', balance.toString());
+                console.log('Required amount:', betAmount.toString());
+
+                if (balance.lt(betAmount)) {
+                    console.log('Insufficient balance!');
+                    showStatus('Insufficient PONY balance!', 'error');
+                    return;
+                }
+
+                console.log('Balance OK, sending approval transaction...');
+                console.log('Approving', PIXEL_PONY_ADDRESS, 'to spend', betAmount.toString());
+
+                // Get current gas price and add large buffer for Base (can be volatile)
+                const gasPrice = await provider.getGasPrice();
+                const gasPriceWithBuffer = gasPrice.mul(1500).div(100); // 15x buffer for safety
+
+                console.log('Base gas price:', ethers.utils.formatUnits(gasPrice, 'gwei'), 'gwei');
+                console.log('Gas price with 15x buffer:', ethers.utils.formatUnits(gasPriceWithBuffer, 'gwei'), 'gwei');
+
+                const tx = await ponyToken.approve(PIXEL_PONY_ADDRESS, betAmount, {
+                    gasLimit: 100000,
+                    maxPriorityFeePerGas: gasPriceWithBuffer,
+                    maxFeePerGas: gasPriceWithBuffer.mul(2) // Allow up to 2x the buffered price
+                });
+
+                console.log('Approval TX sent:', tx.hash);
+                showStatus('Approval transaction sent! TX: ' + tx.hash.slice(0, 10) + '...', 'info');
+
+                console.log('Waiting for confirmation...');
+                const receipt = await tx.wait();
+                console.log('Approval confirmed! Block:', receipt.blockNumber);
+
+                showStatus('PONY approved successfully! Now click "Place Bet & Race"', 'success');
+                document.getElementById('betBtn').disabled = false;
+                console.log('=== APPROVE COMPLETE ===');
+
+            } catch (error) {
+                console.error('=== APPROVAL ERROR ===');
+                console.error('Error details:', error);
+                console.error('Error message:', error.message);
+                console.error('Error code:', error.code);
+                if (error.data) {
+                    console.error('Error data:', error.data);
+                }
+
+                // Handle specific errors
+                if (error.code === 'REPLACEMENT_UNDERPRICED' || error.message.includes('replacement')) {
+                    showStatus('⚠️ You have a pending transaction! Please wait for it to complete, or cancel it in MetaMask, then try again.', 'error');
+                } else if (error.code === 4001 || error.message.includes('user rejected')) {
+                    showStatus('Transaction cancelled by user', 'info');
+                } else if (error.message.includes('insufficient funds')) {
+                    showStatus('Insufficient ETH for gas fees', 'error');
+                } else {
+                    showStatus('Approval failed: ' + (error.message || 'Unknown error'), 'error');
+                }
+            }
+        }
+
+        // Place bet
+        async function placeBet() {
+            if (!userAddress || selectedHorse === null) {
+                showStatus('Please connect wallet and select a pony first!', 'error');
+                return;
+            }
+
+            try {
+                showStatus('Placing bet and starting race...', 'info');
+
+                const betAmountSelect = document.getElementById('betAmountSelect').value;
+                const customAmount = document.getElementById('customBetAmount').value;
+
+                let betAmount;
+                if (customAmount && parseFloat(customAmount) > 0) {
+                    // Custom amount is in billions, convert to wei
+                    betAmount = ethers.utils.parseEther(customAmount).mul(1e9);
+                } else {
+                    // Select value is already in billions (1000000000 = 1B), just add decimals
+                    betAmount = ethers.utils.parseEther(betAmountSelect);
+                }
+
+                console.log('Placing bet of', betAmount.toString(), 'PONY on horse', selectedHorse);
+
+                const baseFee = await pixelPony.baseFeeAmount();
+
+                // Check ETH balance (need entry fee + small buffer for gas)
+                const ethBal = await provider.getBalance(userAddress);
+                const minRequired = baseFee.add(ethers.utils.parseEther('0.0005')); // Entry fee + 0.0005 for gas
+
+                console.log('ETH Balance:', ethers.utils.formatEther(ethBal));
+                console.log('Min Required:', ethers.utils.formatEther(minRequired));
+
+                if (ethBal.lt(minRequired)) {
+                    const needed = ethers.utils.formatEther(minRequired.sub(ethBal));
+                    showStatus(`Insufficient ETH! You have ${ethers.utils.formatEther(ethBal)} ETH but need at least ${ethers.utils.formatEther(minRequired)} ETH. Please add ${needed} more ETH.`, 'error');
+                    return;
+                }
+
+                // Get current gas price and add large buffer for Base (can be volatile)
+                const gasPrice = await provider.getGasPrice();
+                const gasPriceWithBuffer = gasPrice.mul(1500).div(100); // 15x buffer for safety
+
+                console.log('Race base gas price:', ethers.utils.formatUnits(gasPrice, 'gwei'), 'gwei');
+                console.log('Race gas with 15x buffer:', ethers.utils.formatUnits(gasPriceWithBuffer, 'gwei'), 'gwei');
+
+                const tx = await pixelPony.placeBetAndRace(selectedHorse, betAmount, {
+                    value: baseFee,
+                    gasLimit: 1000000,
+                    maxPriorityFeePerGas: gasPriceWithBuffer,
+                    maxFeePerGas: gasPriceWithBuffer.mul(2) // Allow up to 2x the buffered price
+                });
+
+                showStatus('Race transaction sent! Waiting for blockchain confirmation...', 'info');
+
+                // Show race visualization while waiting
+                showRaceVisualization(selectedHorse);
+
+                const receipt = await tx.wait();
+
+                showStatus('Transaction confirmed! Animating race...', 'info');
+
+                // Find race event
+                const raceEvent = receipt.events?.find(e => e.event === 'RaceExecuted');
+
+                if (raceEvent) {
+                    const { raceId, horseId, winners, payout, won } = raceEvent.args;
+
+                    // Convert winners to numbers
+                    const winnerIds = [
+                        parseInt(winners[0].toString()),
+                        parseInt(winners[1].toString()),
+                        parseInt(winners[2].toString())
+                    ];
+
+                    // Animate the race with actual winners
+                    await animateRace(selectedHorse, winnerIds);
+
+                    // Display result in results list
+                    displayRaceResult({
+                        raceId: raceId.toString(),
+                        horseId: horseId.toString(),
+                        winners: winnerIds.map(w => w.toString()),
+                        payout: ethers.utils.formatEther(payout),
+                        won: won
+                    });
+
+                    if (won) {
+                        const position = winnerIds.indexOf(selectedHorse) + 1;
+                        showStatus(`🎉 YOU WON ${position === 1 ? '1ST' : position === 2 ? '2ND' : '3RD'} PLACE! Payout: ${(parseFloat(ethers.utils.formatEther(payout)) / 1e9).toFixed(2)}B PONY`, 'success');
+                    } else {
+                        showStatus(`😢 Pony #${parseInt(horseId) + 1} didn't place. Better luck next time!`, 'info');
+                    }
+                }
+
+                // Reload data
+                await loadBalances();
+                await loadGameStats();
+                await loadUserTickets();
+
+                // Reset bet button
+                document.getElementById('betBtn').disabled = true;
+
+            } catch (error) {
+                console.error('=== BET ERROR ===');
+                console.error('Error details:', error);
+                console.error('Error message:', error.message);
+                console.error('Error code:', error.code);
+
+                // Handle specific errors
+                if (error.code === 'REPLACEMENT_UNDERPRICED' || error.message.includes('replacement')) {
+                    showStatus('⚠️ You have a pending transaction! Please wait for it to complete, or cancel it in MetaMask, then try again.', 'error');
+                } else if (error.code === 4001 || error.message.includes('user rejected')) {
+                    showStatus('Transaction cancelled by user', 'info');
+                } else if (error.message.includes('insufficient funds')) {
+                    showStatus('Insufficient ETH for gas fees + entry fee', 'error');
+                } else {
+                    showStatus('Bet failed: ' + (error.message || 'Unknown error'), 'error');
+                }
+            }
+        }
+
+        // Display race result
+        function displayRaceResult(result) {
+            const resultsDiv = document.getElementById('raceResults');
+
+            if (resultsDiv.querySelector('p')) {
+                resultsDiv.innerHTML = '';
+            }
+
+            const resultItem = document.createElement('div');
+            resultItem.className = 'race-result-item';
+            resultItem.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                    <div>
+                        <strong>Race #${result.raceId}</strong> - Pony #${parseInt(result.horseId) + 1}
+                        <div style="margin-top: 5px; color: #666;">
+                            Winners: Ponies #${result.winners.map(w => parseInt(w) + 1).join(', #')}
+                        </div>
+                        <div style="margin-top: 8px;">
+                            <a href="/replay" target="_blank">
+                                <button style="font-size: 8px; padding: 6px 10px;">📊 View All Races</button>
+                            </a>
+                        </div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 1.5em; font-weight: bold; color: ${result.won ? '#28a745' : '#dc3545'};">
+                            ${result.won ? '✓ WON' : '✗ LOST'}
+                        </div>
+                        ${result.won ? `<div style="color: #28a745;">+${(parseFloat(result.payout) / 1e9).toFixed(2)}B PONY</div>` : ''}
+                    </div>
+                </div>
+            `;
+
+            resultsDiv.insertBefore(resultItem, resultsDiv.firstChild);
+
+            // Keep only last 10 results
+            while (resultsDiv.children.length > 10) {
+                resultsDiv.removeChild(resultsDiv.lastChild);
+            }
+        }
+
+        // ============= RACE VISUALIZATION =============
+
+        function showRaceVisualization(playerHorseId) {
+            const section = document.getElementById('raceTrackSection');
+            const lanesContainer = document.getElementById('raceLanes');
+            const overlay = document.getElementById('raceStatusOverlay');
+            const statusText = document.getElementById('raceStatusText');
+
+            // Show the race track
+            section.style.display = 'block';
+            overlay.style.display = 'flex';
+            statusText.textContent = 'Loading Race...';
+
+            // Scroll to race track
+            section.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            // Clear previous lanes
+            lanesContainer.innerHTML = '';
+
+            // Generate random sprite assignments for this race (1-30)
+            const raceSprites = [];
+            for (let i = 0; i < 16; i++) {
+                raceSprites.push(Math.floor(Math.random() * 30) + 1);
+            }
+
+            // Create 16 lanes with horses
+            for (let i = 0; i < 16; i++) {
+                const lane = document.createElement('div');
+                lane.className = 'track-lane';
+                lane.id = `lane-${i}`;
+
+                const laneNumber = document.createElement('div');
+                laneNumber.className = 'lane-number';
+                laneNumber.textContent = `#${i + 1}`;
+
+                const horse = document.createElement('img');
+                horse.src = `sprites/${raceSprites[i]}.png`;
+                horse.className = 'horse-racer';
+                horse.id = `horse-${i}`;
+                horse.alt = `Pony #${i + 1}`;
+                horse.style.left = '35px'; // Start behind start line
+
+                if (i === playerHorseId) {
+                    horse.classList.add('player-horse');
+                }
+
+                const positionBadge = document.createElement('div');
+                positionBadge.className = 'position-badge';
+                positionBadge.id = `badge-${i}`;
+
+                lane.appendChild(laneNumber);
+                lane.appendChild(horse);
+                lane.appendChild(positionBadge);
+                lanesContainer.appendChild(lane);
+            }
+        }
+
+        function animateRace(playerHorseId, winners, duration = 5000) {
+            return new Promise((resolve) => {
+                const overlay = document.getElementById('raceStatusOverlay');
+                const statusText = document.getElementById('raceStatusText');
+
+                // Hide overlay, start race
+                overlay.style.display = 'none';
+
+                // Generate random speeds for each horse
+                const horseSpeeds = Array(16).fill(0).map(() => 0.5 + Math.random() * 0.5);
+
+                // Make winners faster
+                winners.forEach((winnerId, index) => {
+                    if (index === 0) horseSpeeds[winnerId] = 1.2; // 1st fastest
+                    else if (index === 1) horseSpeeds[winnerId] = 1.1; // 2nd fast
+                    else if (index === 2) horseSpeeds[winnerId] = 1.0; // 3rd medium-fast
+                });
+
+                const startTime = Date.now();
+                const trackWidth = document.getElementById('trackContainer').offsetWidth;
+                const finishPosition = trackWidth - 80; // Leave room for finish line
+
+                const animationInterval = setInterval(() => {
+                    const elapsed = Date.now() - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+
+                    // Update each horse position
+                    for (let i = 0; i < 16; i++) {
+                        const horse = document.getElementById(`horse-${i}`);
+                        if (horse) {
+                            const speed = horseSpeeds[i];
+                            const easeProgress = 1 - Math.pow(1 - progress, 2); // Ease out
+                            const position = 35 + (finishPosition - 35) * easeProgress * speed;
+                            horse.style.left = position + 'px';
+                        }
+                    }
+
+                    // Race finished
+                    if (progress >= 1) {
+                        clearInterval(animationInterval);
+
+                        // Show winner badges
+                        winners.forEach((winnerId, index) => {
+                            const badge = document.getElementById(`badge-${winnerId}`);
+                            const horse = document.getElementById(`horse-${winnerId}`);
+                            if (badge && horse) {
+                                if (index === 0) {
+                                    badge.textContent = '🥇 1st';
+                                    badge.className = 'position-badge first';
+                                    horse.classList.add('winner');
+                                } else if (index === 1) {
+                                    badge.textContent = '🥈 2nd';
+                                    badge.className = 'position-badge second';
+                                } else if (index === 2) {
+                                    badge.textContent = '🥉 3rd';
+                                    badge.className = 'position-badge third';
+                                }
+                            }
+                        });
+
+                        // Show result overlay
+                        setTimeout(() => {
+                            overlay.style.display = 'flex';
+                            const playerWon = winners.includes(playerHorseId);
+
+                            if (playerWon) {
+                                const position = winners.indexOf(playerHorseId) + 1;
+                                statusText.innerHTML = `🎉 YOU WON ${position === 1 ? '1ST' : position === 2 ? '2ND' : '3RD'} PLACE! 🎉`;
+                                statusText.style.color = '#4ade80';
+                            } else {
+                                statusText.innerHTML = `😢 Pony #${playerHorseId + 1} didn't place<br><small>Winners: Ponies #${winners.map(w => w + 1).join(', #')}</small>`;
+                                statusText.style.color = '#f87171';
+                            }
+
+                            resolve({ won: playerWon });
+
+                            // Hide race track after 5 seconds
+                            setTimeout(() => {
+                                document.getElementById('raceTrackSection').style.display = 'none';
+                            }, 5000);
+                        }, 500);
+                    }
+                }, 50); // Update every 50ms
+            });
+        }
+    </script>
+</body>
+</html>

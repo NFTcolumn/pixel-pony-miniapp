@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Race Animation Test</title>
+    <style>
+        body {
+            font-family: 'Press Start 2P', monospace;
+            background: #bdc3ff;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        button {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 5px;
+            margin: 5px;
+        }
+
+        button:hover {
+            background: #f55555;
+        }
+
+        .track-container {
+            background: #1a202c;
+            border-radius: 10px;
+            padding: 20px;
+            position: relative;
+            min-height: 400px;
+        }
+
+        .race-announcement {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: #4ade80;
+            padding: 30px 50px;
+            border-radius: 15px;
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            z-index: 100;
+            display: none;
+            border: 3px solid #4ade80;
+            text-shadow: 0 0 10px rgba(74, 222, 128, 0.8);
+        }
+
+        .track-lane {
+            background: linear-gradient(90deg, #2d3748 0%, #4a5568 50%, #2d3748 100%);
+            height: 20px;
+            margin: 4px 0;
+            border-radius: 5px;
+            position: relative;
+            border: 1px solid #718096;
+        }
+
+        .lane-number {
+            position: absolute;
+            left: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #a0aec0;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .horse-racer {
+            position: absolute;
+            left: 25px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 24px;
+            height: 24px;
+            image-rendering: pixelated;
+            transition: none;
+            z-index: 10;
+        }
+
+        .horse-racer.player-horse {
+            filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.8));
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .horse-racer.winner {
+            filter: drop-shadow(0 0 12px rgba(255, 215, 0, 1)) brightness(1.2);
+        }
+
+        .track-lane::after {
+            content: '';
+            position: absolute;
+            right: 30px;
+            top: 0;
+            bottom: 0;
+            width: 20px;
+            background: repeating-conic-gradient(#000 0% 25%, #fff 0% 50%) 50% / 20px 20px;
+            z-index: 1;
+            border-left: 2px solid #fff;
+        }
+
+        .info {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-size: 10px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="controls">
+            <h2>Race Animation Test</h2>
+            <p style="font-size: 10px; margin: 10px 0;">Test the race animation without blockchain transactions</p>
+            <button onclick="testRace()">🏁 Start Test Race</button>
+            <button onclick="resetRace()">🔄 Reset</button>
+        </div>
+
+        <div class="track-container" id="trackContainer">
+            <div id="raceLanes"></div>
+            <div class="race-announcement" id="raceAnnouncement"></div>
+        </div>
+
+        <div class="info" id="info">
+            Click "Start Test Race" to see the animation.<br>
+            Random winners will be selected each time.<br>
+            Player horse is #5 (highlighted in gold).
+        </div>
+    </div>
+
+    <script>
+        let animationRunning = false;
+
+        function createTrack() {
+            const lanesContainer = document.getElementById('raceLanes');
+            lanesContainer.innerHTML = '';
+
+            for (let i = 0; i < 16; i++) {
+                const lane = document.createElement('div');
+                lane.className = 'track-lane';
+
+                const laneNumber = document.createElement('div');
+                laneNumber.className = 'lane-number';
+                laneNumber.textContent = `#${i + 1}`;
+
+                const spriteNum = (i % 30) + 1;
+                const horse = document.createElement('img');
+                horse.src = `/sprites/${spriteNum}.png`;
+                horse.className = 'horse-racer';
+                horse.id = `racer-${i}`;
+                horse.alt = `Pony ${i + 1}`;
+                horse.style.left = '35px';
+
+                // Highlight horse #5 as player
+                if (i === 4) {
+                    horse.classList.add('player-horse');
+                }
+
+                lane.appendChild(laneNumber);
+                lane.appendChild(horse);
+                lanesContainer.appendChild(lane);
+            }
+        }
+
+        function animateRace(winners) {
+            return new Promise((resolve) => {
+                console.log('🎬 Starting race animation...');
+                console.log('🏆 Winners:', winners);
+
+                const trackContainer = document.getElementById('trackContainer');
+                const trackWidth = trackContainer.offsetWidth;
+                const duration = 6000; // Extended to 6 seconds so all horses can finish
+                const startPosition = 35;
+                const finishPosition = trackWidth - 70; // Stop before the right edge
+                const raceDistance = finishPosition - startPosition;
+
+                // Generate random speeds for each horse (1.0-1.2 for losers - fast enough to finish)
+                const horseSpeeds = Array(16).fill(0).map(() => 1.0 + Math.random() * 0.2);
+
+                // Make winners faster
+                winners.forEach((winnerId, index) => {
+                    if (index === 0) horseSpeeds[winnerId] = 1.5; // 1st place
+                    else if (index === 1) horseSpeeds[winnerId] = 1.4; // 2nd place
+                    else if (index === 2) horseSpeeds[winnerId] = 1.3; // 3rd place
+                });
+
+                console.log('🏇 Horse speeds:', horseSpeeds);
+                console.log('📏 Track width:', trackWidth, 'Race distance:', raceDistance);
+
+                const startTime = Date.now();
+
+                const animationInterval = setInterval(() => {
+                    const elapsed = Date.now() - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+
+                    // Update each horse position
+                    for (let i = 0; i < 16; i++) {
+                        const horse = document.getElementById(`racer-${i}`);
+                        if (!horse) continue;
+
+                        const speed = horseSpeeds[i];
+                        const easeProgress = 1 - Math.pow(1 - progress, 2); // Ease out
+                        const position = startPosition + (raceDistance * easeProgress * speed);
+
+                        // Clamp position to not go past finish line
+                        const clampedPosition = Math.min(position, finishPosition);
+                        horse.style.left = clampedPosition + 'px';
+
+                        // Add winner class near the end
+                        if (easeProgress >= 0.95 && winners.includes(i)) {
+                            horse.classList.add('winner');
+                        }
+                    }
+
+                    // Race finished
+                    if (progress >= 1) {
+                        clearInterval(animationInterval);
+                        console.log('🏁 Race animation complete!');
+
+                        // Show winner announcement
+                        const announcement = document.getElementById('raceAnnouncement');
+                        const playerWon = winners.includes(4);
+
+                        announcement.innerHTML = `
+                            🏆 RACE COMPLETE! 🏆<br>
+                            <div style="margin-top: 15px; font-size: 18px;">
+                                Winners:<br>
+                                🥇 Pony #${winners[0] + 1}<br>
+                                🥈 Pony #${winners[1] + 1}<br>
+                                🥉 Pony #${winners[2] + 1}
+                            </div>
+                            <div style="margin-top: 15px; font-size: 20px; color: ${playerWon ? '#4ade80' : '#f87171'};">
+                                ${playerWon ? '🎉 YOU WON! 🎉' : 'Better luck next time!'}
+                            </div>
+                        `;
+                        announcement.style.display = 'block';
+
+                        // Update info panel
+                        const info = document.getElementById('info');
+                        info.innerHTML = `
+                            <strong>${playerWon ? '🎉 YOU WON!' : '😢 YOU LOST'}</strong><br>
+                            Winners: Ponies #${winners.map(w => w + 1).join(', #')}<br>
+                            Player Horse: #5<br>
+                            <br>
+                            Notice how all horses move at different speeds!<br>
+                            Winners (#${winners.map(w => w + 1).join(', #')}) finish first.
+                        `;
+
+                        animationRunning = false;
+
+                        setTimeout(resolve, 500);
+                    }
+                }, 50); // Update every 50ms
+            });
+        }
+
+        async function testRace() {
+            if (animationRunning) return;
+
+            animationRunning = true;
+            resetRace();
+
+            // Generate random winners (3 different horses)
+            const winners = [];
+            while (winners.length < 3) {
+                const randomHorse = Math.floor(Math.random() * 16);
+                if (!winners.includes(randomHorse)) {
+                    winners.push(randomHorse);
+                }
+            }
+
+            document.getElementById('info').textContent = '🏁 Racing...';
+
+            await animateRace(winners);
+        }
+
+        function resetRace() {
+            animationRunning = false;
+            createTrack();
+            document.getElementById('raceAnnouncement').style.display = 'none';
+            document.getElementById('info').innerHTML = `
+                Click "Start Test Race" to see the animation.<br>
+                Random winners will be selected each time.<br>
+                Player horse is #5 (highlighted in gold).
+            `;
+        }
+
+        // Initialize
+        createTrack();
+    </script>
+</body>
+
+</html>
