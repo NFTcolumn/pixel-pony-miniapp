@@ -285,26 +285,47 @@ function App() {
       if (!isRacing || raceHash !== hash) return
 
       try {
-        setStatusMessage('⏳ Race in progress...')
+        console.log('🏁 Race transaction confirmed! Hash:', hash)
+        setStatusMessage('✅ Transaction confirmed! Starting countdown...')
 
-        // Wait a moment for the transaction to be indexed
-        await new Promise(resolve => setTimeout(resolve, 2000))
+        // 5 second countdown
+        for (let i = 5; i > 0; i--) {
+          setStatusMessage(`🏁 Race starting in ${i}...`)
+          await new Promise(resolve => setTimeout(resolve, 1000))
+        }
 
-        // Fetch the race event
+        setStatusMessage('🏁 AND THEY\'RE OFF!')
+
+        // Get the transaction receipt to find the block number
+        const receipt = await publicClient.getTransactionReceipt({ hash })
+        console.log('📦 Transaction receipt:', receipt)
+
+        // Wait a moment for block to be indexed
+        await new Promise(resolve => setTimeout(resolve, 1000))
+
+        // Fetch the race event from the transaction block
         const logs = await publicClient.getLogs({
           address: PIXEL_PONY_ADDRESS,
           event: PIXEL_PONY_ABI[3], // RaceExecuted event
-          fromBlock: 'latest',
-          toBlock: 'latest'
+          fromBlock: receipt.blockNumber,
+          toBlock: receipt.blockNumber
         })
 
-        // Find the event for this user
+        console.log('📜 Found logs:', logs)
+
+        // Find the event for this specific transaction
         const raceEvent = logs.find((log: any) =>
-          log.args.player?.toLowerCase() === address.toLowerCase()
+          log.transactionHash === hash
         )
+
+        console.log('🎯 Race event for our transaction:', raceEvent)
 
         if (raceEvent && raceEvent.args) {
           const { winners, payout, won } = raceEvent.args as any
+
+          console.log('🏆 Winners:', winners)
+          console.log('💰 Payout:', payout)
+          console.log('🎉 Won:', won)
 
           // Animate the race
           await animateRace(winners.map((w: bigint) => Number(w)))
@@ -318,11 +339,12 @@ function App() {
           setShowResult(true)
           setStatusMessage(won ? '🎉 You won!' : '😢 Better luck next time!')
         } else {
-          setStatusMessage('✅ Race complete! Refresh to see results.')
+          console.error('❌ Could not find race event')
+          setStatusMessage('⚠️ Race complete but results not found. Check your balance!')
           setTimeout(() => {
             setShowTrack(false)
             setIsRacing(false)
-          }, 3000)
+          }, 5000)
         }
 
         // Refresh balances
@@ -336,13 +358,13 @@ function App() {
         setIsApproved(false)
         resetWrite()
       } catch (error) {
-        console.error('Error fetching race results:', error)
-        setStatusMessage('✅ Race submitted! Results pending...')
+        console.error('❌ Error in race handler:', error)
+        setStatusMessage('⚠️ Error loading race results. Check console!')
         setTimeout(() => {
           setShowTrack(false)
           setIsRacing(false)
           setRaceHash(null)
-        }, 3000)
+        }, 5000)
       }
     }
 
