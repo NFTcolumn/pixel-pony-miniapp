@@ -287,8 +287,14 @@ function App() {
   // Handle race transaction confirmation and fetch results
   useEffect(() => {
     const handleRaceComplete = async () => {
-      if (!isConfirmed || !hash || !publicClient || !address) return
-      if (!isRacing || raceHash !== hash) return
+      if (!isConfirmed || !hash || !publicClient || !address) {
+        console.log('⏸️ Waiting for confirmation...', { isConfirmed, hash, publicClient: !!publicClient, address })
+        return
+      }
+      if (!isRacing || raceHash !== hash) {
+        console.log('⏸️ Not the right race...', { isRacing, raceHash, hash })
+        return
+      }
 
       try {
         console.log('🏁 Race transaction confirmed! Hash:', hash)
@@ -300,58 +306,68 @@ function App() {
         // Get the transaction receipt to find the block number
         const receipt = await publicClient.getTransactionReceipt({ hash })
         console.log('📦 Transaction receipt:', receipt)
+        console.log('📦 Receipt status:', receipt.status)
+        console.log('📦 Receipt logs:', receipt.logs)
 
-        // Fetch the race event from the transaction block
-        const logs = await publicClient.getLogs({
-          address: PIXEL_PONY_ADDRESS,
-          event: PIXEL_PONY_ABI[3], // RaceExecuted event
-          fromBlock: receipt.blockNumber,
-          toBlock: receipt.blockNumber
-        })
+        // Check if transaction was successful
+        if (receipt.status !== 'success') {
+          throw new Error('Transaction reverted or failed')
+        }
 
-        console.log('📜 Found logs:', logs)
-
-        // Find the event for this specific transaction
-        const raceEvent = logs.find((log: any) =>
-          log.transactionHash === hash
+        // Look for our event in the logs
+        const raceLog = receipt.logs.find((log: any) =>
+          log.address.toLowerCase() === PIXEL_PONY_ADDRESS.toLowerCase()
         )
 
-        console.log('🎯 Race event for our transaction:', raceEvent)
+        console.log('🎯 Found race log:', raceLog)
 
-        if (raceEvent && raceEvent.args) {
-          const { winners, payout, won } = raceEvent.args as any
-
-          console.log('🏆 Winners:', winners)
-          console.log('💰 Payout:', payout)
-          console.log('🎉 Won:', won)
-
-          const winnerIds = winners.map((w: bigint) => Number(w))
-
-          // Animate the race with actual winners
-          await animateRace(winnerIds)
-
-          // Show results after animation completes
-          setRaceResult({
-            won,
-            winners: winnerIds,
-            payout: formatEther(payout)
-          })
-          setShowResult(true)
-
-          // Hide track after showing result
-          setTimeout(() => {
-            setShowTrack(false)
-          }, 1000)
-
-          setStatusMessage(won ? '🎉 You won!' : '😢 Better luck next time!')
-        } else {
-          console.error('❌ Could not find race event')
-          setStatusMessage('⚠️ Race complete but results not found. Check your balance!')
-          setTimeout(() => {
-            setShowTrack(false)
-            setIsRacing(false)
-          }, 5000)
+        if (!raceLog) {
+          throw new Error('No RaceExecuted event found in transaction logs')
         }
+
+        // Parse the log data manually
+        // RaceExecuted(uint256 indexed raceId, address indexed player, uint256 horseId, uint256[3] winners, uint256 payout, bool won)
+        const topics = raceLog.topics
+        const data = raceLog.data
+
+        console.log('📊 Log topics:', topics)
+        console.log('📊 Log data:', data)
+
+        // Try using viem's decodeEventLog
+        const { decodeEventLog } = await import('viem')
+        const decodedLog = decodeEventLog({
+          abi: PIXEL_PONY_ABI,
+          data: raceLog.data,
+          topics: raceLog.topics
+        })
+
+        console.log('🔍 Decoded log:', decodedLog)
+
+        const { winners, payout, won } = decodedLog.args as any
+
+        console.log('🏆 Winners:', winners)
+        console.log('💰 Payout:', payout)
+        console.log('🎉 Won:', won)
+
+        const winnerIds = winners.map((w: bigint) => Number(w))
+
+        // Animate the race with actual winners
+        await animateRace(winnerIds)
+
+        // Show results after animation completes
+        setRaceResult({
+          won,
+          winners: winnerIds,
+          payout: formatEther(payout)
+        })
+        setShowResult(true)
+
+        // Hide track after showing result
+        setTimeout(() => {
+          setShowTrack(false)
+        }, 1000)
+
+        setStatusMessage(won ? '🎉 You won!' : '😢 Better luck next time!')
 
         // Refresh balances
         refetchJackpot()
@@ -363,9 +379,11 @@ function App() {
         setRaceHash(null)
         setIsApproved(false)
         resetWrite()
-      } catch (error) {
+      } catch (error: any) {
         console.error('❌ Error in race handler:', error)
-        setStatusMessage('⚠️ Error loading race results. Check console!')
+        console.error('❌ Error message:', error?.message)
+        console.error('❌ Error stack:', error?.stack)
+        setStatusMessage(`⚠️ Error: ${error?.message || 'Unknown error'}. Check console!`)
         setTimeout(() => {
           setShowTrack(false)
           setIsRacing(false)
