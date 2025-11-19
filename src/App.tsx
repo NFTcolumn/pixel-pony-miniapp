@@ -82,6 +82,7 @@ function App() {
   const [raceHash, setRaceHash] = useState<`0x${string}` | null>(null)
   const [approvalHash, setApprovalHash] = useState<`0x${string}` | null>(null)
   const trackInnerRef = useRef<HTMLDivElement>(null)
+  const processedRaces = useRef<Set<string>>(new Set())
 
   // Initialize Farcaster SDK
   useEffect(() => {
@@ -287,6 +288,15 @@ function App() {
         return
       }
 
+      // Prevent processing the same race twice
+      if (processedRaces.current.has(hash)) {
+        console.log('⏭️ Race already processed, skipping...')
+        return
+      }
+
+      console.log('🎯 Processing race:', hash)
+      processedRaces.current.add(hash)
+
       try {
         console.log('🏁 Race transaction confirmed! Hash:', hash)
         setStatusMessage('✅ Transaction confirmed! Animating race...')
@@ -398,6 +408,9 @@ function App() {
         setRaceHash(null)
         setIsApproved(false)
         resetWrite()
+
+        // Prevent re-running with the same hash
+        return
       } catch (error: any) {
         console.error('❌ Error in race handler:', error)
         console.error('❌ Error message:', error?.message)
