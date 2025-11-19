@@ -381,13 +381,19 @@ function App() {
   // Animate race
   const animateRace = (winners: number[]): Promise<void> => {
     return new Promise((resolve) => {
+      console.log('🎬 Starting race animation...')
+      console.log('🏆 Winners to highlight:', winners)
+
       const trackInner = trackInnerRef.current
       if (!trackInner) {
+        console.error('❌ Track ref not found!')
         resolve()
         return
       }
 
+      console.log('📏 Track inner element:', trackInner)
       const trackWidth = trackInner.offsetWidth - 60
+      console.log('📏 Track width:', trackWidth)
       const duration = 5000
 
       // Generate speeds
@@ -398,6 +404,8 @@ function App() {
         else if (index === 2) horseSpeeds[winnerId] = 1.0
       })
 
+      console.log('🏇 Horse speeds:', horseSpeeds)
+
       const startTime = Date.now()
       const finishPosition = trackWidth
 
@@ -407,7 +415,10 @@ function App() {
 
         for (let i = 0; i < 16; i++) {
           const horse = document.getElementById(`racer-${i}`)
-          if (!horse) continue
+          if (!horse) {
+            if (i === 0) console.warn(`⚠️ Horse racer-${i} element not found!`)
+            continue
+          }
 
           const speed = horseSpeeds[i]
           const easeProgress = 1 - Math.pow(1 - progress, 2)
@@ -421,6 +432,7 @@ function App() {
         }
 
         if (progress >= 1) {
+          console.log('🏁 Race animation complete!')
           clearInterval(interval)
           setTimeout(resolve, 1000)
         }
@@ -527,6 +539,7 @@ function App() {
                 <div key={i} className="track-lane">
                   <span className="lane-number">#{i + 1}</span>
                   <img
+                    id={`racer-${i}`}
                     src={`/sprites/${spriteNum}.png`}
                     className={`horse-racer ${i === selectedHorse ? 'player-horse' : ''}`}
                     alt={`Racer ${i + 1}`}
