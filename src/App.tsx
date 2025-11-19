@@ -124,7 +124,6 @@ function App() {
   const [ponyBalance, setPonyBalance] = useState('0')
   const [isRacing, setIsRacing] = useState(false)
   const [raceHash, setRaceHash] = useState<`0x${string}` | null>(null)
-  const [showWalletWarning, setShowWalletWarning] = useState(false)
   const trackInnerRef = useRef<HTMLDivElement>(null)
 
   // Initialize Farcaster SDK
@@ -141,23 +140,11 @@ function App() {
     initSdk()
   }, [])
 
-  // Auto-connect on mount and check wallet type
+  // Auto-connect on mount
   useEffect(() => {
-    const checkWallet = async () => {
-      if (!isConnected && connectors.length > 0) {
-        connect({ connector: connectors[0] })
-      }
-
-      // Check if using native Farcaster wallet
-      if (isConnected && window.ethereum) {
-        const provider = window.ethereum as any
-        const isNativeWallet = !provider.isMetaMask && !provider.isCoinbaseWallet && !provider.isWalletConnect
-        if (isNativeWallet) {
-          setShowWalletWarning(true)
-        }
-      }
+    if (!isConnected && connectors.length > 0) {
+      connect({ connector: connectors[0] })
     }
-    checkWallet()
   }, [isConnected, connectors, connect])
 
   // Read jackpot
@@ -500,36 +487,6 @@ function App() {
         <div className="jackpot-amount">{jackpotDisplay}</div>
         <div style={{ fontSize: '8px', marginTop: '5px' }}>PONY</div>
       </div>
-
-      {/* Wallet Warning */}
-      {showWalletWarning && (
-        <div className="status-message" style={{
-          background: '#fff3cd',
-          border: '2px solid #ffc107',
-          color: '#856404'
-        }}>
-          ⚠️ <strong>Native Farcaster Wallet Detected</strong><br/>
-          The built-in Farcaster wallet has limited support for transactions.<br/>
-          <strong>Please connect an external wallet</strong> (MetaMask, Coinbase Wallet, etc.) to race.<br/>
-          <br/>
-          <small>Know how to fix this? We'd love your help! Contact us with suggestions.</small>
-          <br/>
-          <button
-            onClick={() => setShowWalletWarning(false)}
-            style={{
-              marginTop: '10px',
-              padding: '8px 16px',
-              background: '#ffc107',
-              border: 'none',
-              borderRadius: '5px',
-              cursor: 'pointer',
-              fontSize: '10px'
-            }}
-          >
-            Dismiss
-          </button>
-        </div>
-      )}
 
       {/* Status Message */}
       <div className="status-message">{statusMessage}</div>
