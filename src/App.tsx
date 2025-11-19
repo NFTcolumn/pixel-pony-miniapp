@@ -4,6 +4,13 @@ import { parseEther, formatEther } from 'viem'
 import { sdk } from '@farcaster/miniapp-sdk'
 import './App.css'
 
+// Extend Window interface for ethereum
+declare global {
+  interface Window {
+    ethereum?: any
+  }
+}
+
 // Contract addresses
 const PIXEL_PONY_ADDRESS = '0x2B4652Bd6149E407E3F57190E25cdBa1FC9d37d8'
 const PONY_TOKEN_ADDRESS = '0x6ab297799335E7b0f60d9e05439Df156cf694Ba7'
