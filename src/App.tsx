@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useAccount, useConnect, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
+import { useAccount, useConnect, useReadContract, useWriteContract, useWaitForTransactionReceipt, usePublicClient } from 'wagmi'
 import { parseEther, formatEther } from 'viem'
 import { sdk } from '@farcaster/miniapp-sdk'
 import './App.css'
@@ -102,8 +102,9 @@ function formatPony(num: string): string {
 function App() {
   const { address, isConnected } = useAccount()
   const { connectors, connect } = useConnect()
-  const { writeContract, data: hash, isPending: isWritePending } = useWriteContract()
-  const { isLoading: isConfirming } = useWaitForTransactionReceipt({ hash })
+  const { writeContract, data: hash, isPending: isWritePending, reset: resetWrite } = useWriteContract()
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash })
+  const publicClient = usePublicClient()
 
   const [selectedHorse, setSelectedHorse] = useState<number | null>(null)
   const [selectedBet, setSelectedBet] = useState<bigint | null>(null)
@@ -111,9 +112,11 @@ function App() {
   const [isApproved, setIsApproved] = useState(false)
   const [showTrack, setShowTrack] = useState(false)
   const [showResult, setShowResult] = useState(false)
-  const [raceResult] = useState<{ won: boolean; winners: number[]; payout: string } | null>(null)
+  const [raceResult, setRaceResult] = useState<{ won: boolean; winners: number[]; payout: string } | null>(null)
   const [ethBalance] = useState('0')
   const [ponyBalance, setPonyBalance] = useState('0')
+  const [isRacing, setIsRacing] = useState(false)
+  const [raceHash, setRaceHash] = useState<`0x${string}` | null>(null)
   const trackInnerRef = useRef<HTMLDivElement>(null)
 
   // Initialize Farcaster SDK
@@ -225,9 +228,10 @@ function App() {
   }
 
   const handleRace = async () => {
-    if (selectedHorse === null || !selectedBet || !baseFee) return
+    if (selectedHorse === null || !selectedBet || !baseFee || isRacing) return
     try {
       setStatusMessage('🏁 Starting race...')
+      setIsRacing(true)
       setShowTrack(true)
 
       writeContract({
@@ -241,16 +245,153 @@ function App() {
       console.error('Race error:', error)
       setStatusMessage('❌ Race failed')
       setShowTrack(false)
+      setIsRacing(false)
     }
   }
 
-  // Watch for approval confirmation
+  // Separate approval and race transaction handling
   useEffect(() => {
-    if (hash && !isConfirming && !isWritePending) {
+    if (!hash || isConfirming || isWritePending) return
+
+    // Check if this is an approval or race transaction
+    if (isApproved && raceHash === hash) {
+      // This is a race transaction that just confirmed
+      return
+    }
+
+    if (!isApproved) {
+      // This is an approval transaction
       refetchAllowance()
       setStatusMessage('✅ Approved! Now click STEP 2: RACE!')
     }
-  }, [hash, isConfirming, isWritePending, refetchAllowance])
+  }, [hash, isConfirming, isWritePending, isApproved, raceHash, refetchAllowance])
+
+  // Handle race transaction confirmation and fetch results
+  useEffect(() => {
+    const handleRaceComplete = async () => {
+      if (!isConfirmed || !hash || !publicClient || !address) return
+      if (!isRacing || raceHash !== hash) return
+
+      try {
+        setStatusMessage('⏳ Race in progress...')
+
+        // Wait a moment for the transaction to be indexed
+        await new Promise(resolve => setTimeout(resolve, 2000))
+
+        // Fetch the race event
+        const logs = await publicClient.getLogs({
+          address: PIXEL_PONY_ADDRESS,
+          event: PIXEL_PONY_ABI[3], // RaceExecuted event
+          fromBlock: 'latest',
+          toBlock: 'latest'
+        })
+
+        // Find the event for this user
+        const raceEvent = logs.find((log: any) =>
+          log.args.player?.toLowerCase() === address.toLowerCase()
+        )
+
+        if (raceEvent && raceEvent.args) {
+          const { winners, payout, won } = raceEvent.args as any
+
+          // Animate the race
+          await animateRace(winners.map((w: bigint) => Number(w)))
+
+          // Show results
+          setRaceResult({
+            won,
+            winners: winners.map((w: bigint) => Number(w)),
+            payout: formatEther(payout)
+          })
+          setShowResult(true)
+          setStatusMessage(won ? '🎉 You won!' : '😢 Better luck next time!')
+        } else {
+          setStatusMessage('✅ Race complete! Refresh to see results.')
+          setTimeout(() => {
+            setShowTrack(false)
+            setIsRacing(false)
+          }, 3000)
+        }
+
+        // Refresh balances
+        refetchJackpot()
+        refetchPonyBalance()
+
+        // Reset race state
+        setIsRacing(false)
+        setRaceHash(null)
+        setIsApproved(false)
+        resetWrite()
+      } catch (error) {
+        console.error('Error fetching race results:', error)
+        setStatusMessage('✅ Race submitted! Results pending...')
+        setTimeout(() => {
+          setShowTrack(false)
+          setIsRacing(false)
+          setRaceHash(null)
+        }, 3000)
+      }
+    }
+
+    handleRaceComplete()
+  }, [isConfirmed, hash, publicClient, address, isRacing, raceHash, refetchJackpot, refetchPonyBalance, resetWrite])
+
+  // Track when we start a race transaction
+  useEffect(() => {
+    if (hash && isRacing && !raceHash) {
+      setRaceHash(hash)
+    }
+  }, [hash, isRacing, raceHash])
+
+  // Animate race
+  const animateRace = (winners: number[]): Promise<void> => {
+    return new Promise((resolve) => {
+      const trackInner = trackInnerRef.current
+      if (!trackInner) {
+        resolve()
+        return
+      }
+
+      const trackWidth = trackInner.offsetWidth - 60
+      const duration = 5000
+
+      // Generate speeds
+      const horseSpeeds = Array(16).fill(0).map(() => 0.5 + Math.random() * 0.5)
+      winners.forEach((winnerId, index) => {
+        if (index === 0) horseSpeeds[winnerId] = 1.2
+        else if (index === 1) horseSpeeds[winnerId] = 1.1
+        else if (index === 2) horseSpeeds[winnerId] = 1.0
+      })
+
+      const startTime = Date.now()
+      const finishPosition = trackWidth
+
+      const interval = setInterval(() => {
+        const elapsed = Date.now() - startTime
+        const progress = Math.min(elapsed / duration, 1)
+
+        for (let i = 0; i < 16; i++) {
+          const horse = document.getElementById(`racer-${i}`)
+          if (!horse) continue
+
+          const speed = horseSpeeds[i]
+          const easeProgress = 1 - Math.pow(1 - progress, 2)
+          const position = 25 + (finishPosition - 25) * easeProgress * speed
+
+          horse.style.left = position + 'px'
+
+          if (easeProgress >= 0.95 && winners.includes(i)) {
+            horse.classList.add('winner')
+          }
+        }
+
+        if (progress >= 1) {
+          clearInterval(interval)
+          setTimeout(resolve, 1000)
+        }
+      }, 50)
+    })
+  }
 
   const closeTrack = () => {
     setShowTrack(false)
@@ -263,8 +404,8 @@ function App() {
     refetchPonyBalance()
   }
 
-  const canApprove = selectedHorse !== null && selectedBet !== null && address && !isApproved
-  const canRace = isApproved && !isWritePending
+  const canApprove = selectedHorse !== null && selectedBet !== null && address && !isApproved && !isRacing
+  const canRace = isApproved && !isWritePending && !isRacing
 
   return (
     <div className="container">
