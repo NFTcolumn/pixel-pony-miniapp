@@ -249,9 +249,8 @@ function App() {
   const handleRace = async () => {
     if (selectedHorse === null || !selectedBet || !baseFee || isRacing) return
     try {
-      setStatusMessage('🏁 Starting race...')
+      setStatusMessage('🏁 Sending race transaction...')
       setIsRacing(true)
-      setShowTrack(true)
 
       writeContract({
         address: PIXEL_PONY_ADDRESS,
@@ -293,22 +292,14 @@ function App() {
 
       try {
         console.log('🏁 Race transaction confirmed! Hash:', hash)
-        setStatusMessage('✅ Transaction confirmed! Starting countdown...')
+        setStatusMessage('✅ Transaction confirmed! Animating race...')
 
-        // 5 second countdown
-        for (let i = 5; i > 0; i--) {
-          setStatusMessage(`🏁 Race starting in ${i}...`)
-          await new Promise(resolve => setTimeout(resolve, 1000))
-        }
-
-        setStatusMessage('🏁 AND THEY\'RE OFF!')
+        // Show track
+        setShowTrack(true)
 
         // Get the transaction receipt to find the block number
         const receipt = await publicClient.getTransactionReceipt({ hash })
         console.log('📦 Transaction receipt:', receipt)
-
-        // Wait a moment for block to be indexed
-        await new Promise(resolve => setTimeout(resolve, 1000))
 
         // Fetch the race event from the transaction block
         const logs = await publicClient.getLogs({
@@ -334,16 +325,24 @@ function App() {
           console.log('💰 Payout:', payout)
           console.log('🎉 Won:', won)
 
-          // Animate the race
-          await animateRace(winners.map((w: bigint) => Number(w)))
+          const winnerIds = winners.map((w: bigint) => Number(w))
 
-          // Show results
+          // Animate the race with actual winners
+          await animateRace(winnerIds)
+
+          // Show results after animation completes
           setRaceResult({
             won,
-            winners: winners.map((w: bigint) => Number(w)),
+            winners: winnerIds,
             payout: formatEther(payout)
           })
           setShowResult(true)
+
+          // Hide track after showing result
+          setTimeout(() => {
+            setShowTrack(false)
+          }, 1000)
+
           setStatusMessage(won ? '🎉 You won!' : '😢 Better luck next time!')
         } else {
           console.error('❌ Could not find race event')
@@ -385,65 +384,71 @@ function App() {
     }
   }, [hash, isRacing, raceHash])
 
-  // Animate race
+  // Animate race - matching working HTML version
   const animateRace = (winners: number[]): Promise<void> => {
     return new Promise((resolve) => {
       console.log('🎬 Starting race animation...')
       console.log('🏆 Winners to highlight:', winners)
 
-      const trackInner = trackInnerRef.current
-      if (!trackInner) {
-        console.error('❌ Track ref not found!')
+      const trackContainer = trackInnerRef.current
+      if (!trackContainer) {
+        console.error('❌ Track container not found!')
         resolve()
         return
       }
 
-      console.log('📏 Track inner element:', trackInner)
-      const trackWidth = trackInner.offsetWidth - 60
+      const trackWidth = trackContainer.offsetWidth
       console.log('📏 Track width:', trackWidth)
       const duration = 5000
+      const finishPosition = trackWidth - 80 // Leave room for finish line
 
-      // Generate speeds
+      // Generate random speeds for each horse
       const horseSpeeds = Array(16).fill(0).map(() => 0.5 + Math.random() * 0.5)
+
+      // Make winners faster (same as HTML version)
       winners.forEach((winnerId, index) => {
-        if (index === 0) horseSpeeds[winnerId] = 1.2
-        else if (index === 1) horseSpeeds[winnerId] = 1.1
-        else if (index === 2) horseSpeeds[winnerId] = 1.0
+        if (index === 0) horseSpeeds[winnerId] = 1.2 // 1st fastest
+        else if (index === 1) horseSpeeds[winnerId] = 1.1 // 2nd fast
+        else if (index === 2) horseSpeeds[winnerId] = 1.0 // 3rd medium-fast
       })
 
       console.log('🏇 Horse speeds:', horseSpeeds)
 
       const startTime = Date.now()
-      const finishPosition = trackWidth
 
-      const interval = setInterval(() => {
+      const animationInterval = setInterval(() => {
         const elapsed = Date.now() - startTime
         const progress = Math.min(elapsed / duration, 1)
 
+        // Update each horse position
         for (let i = 0; i < 16; i++) {
           const horse = document.getElementById(`racer-${i}`)
           if (!horse) {
-            if (i === 0) console.warn(`⚠️ Horse racer-${i} element not found!`)
+            if (i === 0) console.warn(`⚠️ Horse racer-${i} not found!`)
             continue
           }
 
           const speed = horseSpeeds[i]
-          const easeProgress = 1 - Math.pow(1 - progress, 2)
+          const easeProgress = 1 - Math.pow(1 - progress, 2) // Ease out
           const position = 25 + (finishPosition - 25) * easeProgress * speed
 
           horse.style.left = position + 'px'
 
+          // Add winner class near the end
           if (easeProgress >= 0.95 && winners.includes(i)) {
             horse.classList.add('winner')
           }
         }
 
+        // Race finished
         if (progress >= 1) {
+          clearInterval(animationInterval)
           console.log('🏁 Race animation complete!')
-          clearInterval(interval)
-          setTimeout(resolve, 1000)
+
+          // Wait a moment before resolving
+          setTimeout(resolve, 500)
         }
-      }, 50)
+      }, 50) // Update every 50ms
     })
   }
 
