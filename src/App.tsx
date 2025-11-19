@@ -259,18 +259,21 @@ function App() {
 
     // Poll allowance until it's updated
     const checkAllowance = async () => {
-      for (let i = 0; i < 10; i++) {
-        await new Promise(resolve => setTimeout(resolve, 500))
+      for (let i = 0; i < 15; i++) {
+        await new Promise(resolve => setTimeout(resolve, 800))
+        setStatusMessage(`⏳ Checking approval... (${i + 1}/15)`)
         const result = await refetchAllowance()
+        console.log(`⏳ Checking allowance... attempt ${i + 1}/15, result:`, result.data?.toString())
         if (result.data && selectedBet && result.data >= selectedBet) {
           console.log('✅ Allowance updated!')
           setStatusMessage('✅ Approved! Now click STEP 2: RACE!')
           setApprovalHash(null)
           return
         }
-        console.log(`⏳ Checking allowance... attempt ${i + 1}/10`)
       }
-      setStatusMessage('⚠️ Approval may not have updated. Try refreshing.')
+      console.log('⚠️ Approval polling timed out')
+      setStatusMessage('⚠️ Approval confirmed but not detected. Click STEP 2 to try racing.')
+      setApprovalHash(null)
     }
 
     checkAllowance()
