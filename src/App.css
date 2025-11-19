@@ -206,14 +206,13 @@
 }
 
 .track-inner {
-    background: #1a1a2e;
+    background: #1a202c;
     border-radius: 10px;
     padding: 20px;
     width: 100%;
-    max-width: 500px;
+    max-width: 800px;
     position: relative;
-    max-height: 90vh;
-    overflow-y: auto;
+    min-height: 400px;
 }
 
 .track-close {
@@ -232,48 +231,57 @@
 
 .track-lane {
     background: linear-gradient(90deg, #2d3748 0%, #4a5568 50%, #2d3748 100%);
-    height: 24px;
+    height: 20px;
     margin: 4px 0;
     border-radius: 5px;
     position: relative;
-    display: flex;
-    align-items: center;
+    border: 1px solid #718096;
+}
+
+.track-lane::after {
+    content: '';
+    position: absolute;
+    right: 30px;
+    top: 0;
+    bottom: 0;
+    width: 20px;
+    background: repeating-conic-gradient(#000 0% 25%, #fff 0% 50%) 50% / 20px 20px;
+    z-index: 1;
+    border-left: 2px solid #fff;
 }
 
 .lane-number {
     position: absolute;
     left: 5px;
-    color: #fff;
-    font-size: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #a0aec0;
+    font-size: 10px;
+    font-weight: bold;
     z-index: 1;
 }
 
 .horse-racer {
     position: absolute;
     left: 25px;
+    top: 50%;
+    transform: translateY(-50%);
     width: 24px;
     height: 24px;
     image-rendering: pixelated;
-    transition: left 0.1s linear;
-}
-
-.horse-racer.winner {
-    filter: drop-shadow(0 0 8px #ffeb3b);
+    transition: none;
+    z-index: 10;
 }
 
 .horse-racer.player-horse {
-    filter: drop-shadow(0 0 8px #00ff00);
+    filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.8));
+    transform: translateY(-50%) scale(1.1);
 }
 
-.finish-line {
-    position: absolute;
-    right: 10px;
-    top: 0;
-    bottom: 0;
-    width: 3px;
-    background: repeating-linear-gradient(45deg, #fff, #fff 8px, #000 8px, #000 16px);
-    z-index: 1;
+.horse-racer.winner {
+    filter: drop-shadow(0 0 12px rgba(255, 215, 0, 1)) brightness(1.2);
 }
+
 
 .race-announcement {
     position: absolute;
