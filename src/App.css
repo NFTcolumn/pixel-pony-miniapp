@@ -272,6 +272,25 @@
     bottom: 0;
     width: 3px;
     background: repeating-linear-gradient(45deg, #fff, #fff 8px, #000 8px, #000 16px);
+    z-index: 1;
+}
+
+.race-announcement {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.9);
+    color: #4ade80;
+    padding: 30px 50px;
+    border-radius: 15px;
+    font-size: 24px;
+    font-weight: bold;
+    text-align: center;
+    z-index: 100;
+    display: none;
+    border: 3px solid #4ade80;
+    text-shadow: 0 0 10px rgba(74, 222, 128, 0.8);
 }
 
 .result-modal {

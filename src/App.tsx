@@ -384,7 +384,7 @@ function App() {
     }
   }, [hash, isRacing, raceHash])
 
-  // Animate race - matching working HTML version
+  // Animate race - matching working test-race.html version
   const animateRace = (winners: number[]): Promise<void> => {
     return new Promise((resolve) => {
       console.log('🎬 Starting race animation...')
@@ -399,20 +399,23 @@ function App() {
 
       const trackWidth = trackContainer.offsetWidth
       console.log('📏 Track width:', trackWidth)
-      const duration = 5000
-      const finishPosition = trackWidth - 80 // Leave room for finish line
+      const duration = 6000 // Extended to 6 seconds so all horses can finish
+      const startPosition = 35
+      const finishPosition = trackWidth - 70 // Stop before the right edge
+      const raceDistance = finishPosition - startPosition
 
-      // Generate random speeds for each horse
-      const horseSpeeds = Array(16).fill(0).map(() => 0.5 + Math.random() * 0.5)
+      // Generate random speeds for each horse (1.0-1.2 for losers - fast enough to finish)
+      const horseSpeeds = Array(16).fill(0).map(() => 1.0 + Math.random() * 0.2)
 
-      // Make winners faster (same as HTML version)
+      // Make winners faster
       winners.forEach((winnerId, index) => {
-        if (index === 0) horseSpeeds[winnerId] = 1.2 // 1st fastest
-        else if (index === 1) horseSpeeds[winnerId] = 1.1 // 2nd fast
-        else if (index === 2) horseSpeeds[winnerId] = 1.0 // 3rd medium-fast
+        if (index === 0) horseSpeeds[winnerId] = 1.5 // 1st place
+        else if (index === 1) horseSpeeds[winnerId] = 1.4 // 2nd place
+        else if (index === 2) horseSpeeds[winnerId] = 1.3 // 3rd place
       })
 
       console.log('🏇 Horse speeds:', horseSpeeds)
+      console.log('📏 Track width:', trackWidth, 'Race distance:', raceDistance)
 
       const startTime = Date.now()
 
@@ -430,9 +433,11 @@ function App() {
 
           const speed = horseSpeeds[i]
           const easeProgress = 1 - Math.pow(1 - progress, 2) // Ease out
-          const position = 25 + (finishPosition - 25) * easeProgress * speed
+          const position = startPosition + (raceDistance * easeProgress * speed)
 
-          horse.style.left = position + 'px'
+          // Clamp position to not go past finish line
+          const clampedPosition = Math.min(position, finishPosition)
+          horse.style.left = clampedPosition + 'px'
 
           // Add winner class near the end
           if (easeProgress >= 0.95 && winners.includes(i)) {
@@ -445,6 +450,26 @@ function App() {
           clearInterval(animationInterval)
           console.log('🏁 Race animation complete!')
 
+          // Show winner announcement
+          const announcement = document.getElementById('raceAnnouncement')
+          if (announcement && selectedHorse !== null) {
+            const playerWon = winners.includes(selectedHorse)
+
+            announcement.innerHTML = `
+              🏆 RACE COMPLETE! 🏆<br>
+              <div style="margin-top: 15px; font-size: 18px;">
+                Winners:<br>
+                🥇 Pony #${winners[0] + 1}<br>
+                🥈 Pony #${winners[1] + 1}<br>
+                🥉 Pony #${winners[2] + 1}
+              </div>
+              <div style="margin-top: 15px; font-size: 20px; color: ${playerWon ? '#4ade80' : '#f87171'};">
+                ${playerWon ? '🎉 YOU WON! 🎉' : 'Better luck next time!'}
+              </div>
+            `
+            announcement.style.display = 'block'
+          }
+
           // Wait a moment before resolving
           setTimeout(resolve, 500)
         }
@@ -454,11 +479,19 @@ function App() {
 
   const closeTrack = () => {
     setShowTrack(false)
+    const announcement = document.getElementById('raceAnnouncement')
+    if (announcement) {
+      announcement.style.display = 'none'
+    }
   }
 
   const closeResult = () => {
     setShowResult(false)
     setShowTrack(false)
+    const announcement = document.getElementById('raceAnnouncement')
+    if (announcement) {
+      announcement.style.display = 'none'
+    }
     refetchJackpot()
     refetchPonyBalance()
     refetchEthBalance()
@@ -544,6 +577,7 @@ function App() {
             ✕ CLOSE
           </button>
           <div className="finish-line"></div>
+          <div className="race-announcement" id="raceAnnouncement"></div>
           <div>
             {Array.from({ length: 16 }, (_, i) => {
               const spriteNum = (i % 30) + 1
