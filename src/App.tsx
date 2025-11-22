@@ -81,7 +81,6 @@ function App() {
   const [isRacing, setIsRacing] = useState(false)
   const [raceHash, setRaceHash] = useState<`0x${string}` | null>(null)
   const [approvalHash, setApprovalHash] = useState<`0x${string}` | null>(null)
-  const [showPonyPopup, setShowPonyPopup] = useState(false)
   const trackInnerRef = useRef<HTMLDivElement>(null)
   const processedRaces = useRef<Set<string>>(new Set())
 
@@ -170,22 +169,10 @@ function App() {
   }, [ethBalanceData])
 
   useEffect(() => {
-    if (ponyBalanceData !== undefined) {
-      const balance = formatPony(formatEther(ponyBalanceData))
-      setPonyBalance(balance)
-
-      // Check if balance is 0 and show popup
-      console.log('🔍 PONY Balance Data:', ponyBalanceData)
-      console.log('🔍 Formatted Balance:', formatEther(ponyBalanceData))
-      console.log('🔍 Address:', address)
-
-      // Check if balance is 0 (both bigint 0n and numeric 0)
-      if ((ponyBalanceData === 0n || parseFloat(formatEther(ponyBalanceData)) === 0) && address) {
-        console.log('✅ Showing popup - balance is 0')
-        setShowPonyPopup(true)
-      }
+    if (ponyBalanceData) {
+      setPonyBalance(formatPony(formatEther(ponyBalanceData)))
     }
-  }, [ponyBalanceData, address])
+  }, [ponyBalanceData])
 
   // Jackpot display
   const jackpotDisplay = gameStats && Array.isArray(gameStats)
@@ -673,30 +660,6 @@ function App() {
           })}
         </div>
       </div>
-
-      {/* Zero PONY Popup */}
-      {showPonyPopup && (
-        <div className="popup-overlay" onClick={() => setShowPonyPopup(false)}>
-          <div className="popup-content" onClick={(e) => e.stopPropagation()}>
-            <button className="popup-close" onClick={() => setShowPonyPopup(false)}>✕</button>
-            <h2 style={{ color: '#ff6b6b', marginBottom: '20px' }}>🐴 Need PONY Tokens? 🐴</h2>
-            <p style={{ fontSize: '16px', marginBottom: '20px', lineHeight: '1.6' }}>
-              You need PONY tokens to play! Get 10B $PONY instantly by joining our Telegram!
-            </p>
-            <a
-              href="https://t.me/pixelponies"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="telegram-btn"
-            >
-              📱 Join Telegram & Get 10B PONY
-            </a>
-            <p style={{ fontSize: '12px', marginTop: '15px', color: '#888' }}>
-              Use the <code>/register</code> command in Telegram to receive your tokens
-            </p>
-          </div>
-        </div>
-      )}
 
     </div>
   )
