@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useAccount, useConnect, useReadContract, useWriteContract, useWaitForTransactionReceipt, usePublicClient, useBalance } from 'wagmi'
+import { useAccount, useConnect, useReadContract } from 'wagmi'
 import { parseEther, formatEther } from 'viem'
 import { sdk } from '@farcaster/miniapp-sdk'
 import './App.css'
@@ -14,40 +14,9 @@ declare global {
 
 // Contract addresses
 const PIXEL_PONY_ADDRESS = '0x2B4652Bd6149E407E3F57190E25cdBa1FC9d37d8'
-const PONY_TOKEN_ADDRESS = '0x6ab297799335E7b0f60d9e05439Df156cf694Ba7'
 
 // Use the full ABI from the verified contract
 const PIXEL_PONY_ABI = PIXEL_PONY_ABI_FULL
-
-const PONY_TOKEN_ABI = [
-  {
-    inputs: [{ name: 'owner', type: 'address' }],
-    name: 'balanceOf',
-    outputs: [{ name: '', type: 'uint256' }],
-    stateMutability: 'view',
-    type: 'function'
-  },
-  {
-    inputs: [
-      { name: 'spender', type: 'address' },
-      { name: 'amount', type: 'uint256' }
-    ],
-    name: 'approve',
-    outputs: [{ name: '', type: 'bool' }],
-    stateMutability: 'nonpayable',
-    type: 'function'
-  },
-  {
-    inputs: [
-      { name: 'owner', type: 'address' },
-      { name: 'spender', type: 'address' }
-    ],
-    name: 'allowance',
-    outputs: [{ name: '', type: 'uint256' }],
-    stateMutability: 'view',
-    type: 'function'
-  }
-] as const
 
 const BET_AMOUNTS = [
   { label: '10B', value: parseEther('10000000000') },
@@ -67,22 +36,18 @@ function formatPony(num: string): string {
 function App() {
   const { address, isConnected } = useAccount()
   const { connectors, connect } = useConnect()
-  const { writeContract, data: hash, isPending: isWritePending, reset: resetWrite } = useWriteContract()
-  const { isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash })
-  const publicClient = usePublicClient()
 
   const [selectedHorse, setSelectedHorse] = useState<number | null>(null)
   const [selectedBet, setSelectedBet] = useState<bigint | null>(null)
-  const [statusMessage, setStatusMessage] = useState('Pick your pony and bet amount, then hit RACE!')
-  const [isApproved, setIsApproved] = useState(false)
+  const [statusMessage, setStatusMessage] = useState('Pick your pony and bet amount - this is a FREE demo!')
   const [showTrack, setShowTrack] = useState(false)
-  const [ethBalance, setEthBalance] = useState('0')
   const [ponyBalance, setPonyBalance] = useState('0')
   const [isRacing, setIsRacing] = useState(false)
-  const [raceHash, setRaceHash] = useState<`0x${string}` | null>(null)
-  const [approvalHash, setApprovalHash] = useState<`0x${string}` | null>(null)
   const trackInnerRef = useRef<HTMLDivElement>(null)
-  const processedRaces = useRef<Set<string>>(new Set())
+
+  // Simulator mode state
+  const [simulatorBalance, setSimulatorBalance] = useState<bigint>(parseEther('100000000000')) // Start with 100B PONY
+  const [lastRaceResult, setLastRaceResult] = useState<{won: boolean, payout: bigint, winners: number[]} | null>(null)
 
   // Initialize Farcaster SDK
   useEffect(() => {
@@ -106,73 +71,19 @@ function App() {
     }
   }, [isConnected, connectors, connect])
 
-  // Read jackpot
-  const { data: gameStats, refetch: refetchJackpot } = useReadContract({
+  // Read jackpot for display purposes only
+  const { data: gameStats } = useReadContract({
     address: PIXEL_PONY_ADDRESS,
     abi: PIXEL_PONY_ABI,
     functionName: 'getGameStats'
   })
 
-  // Read ETH balance
-  const { data: ethBalanceData, refetch: refetchEthBalance } = useBalance({
-    address: address,
-    query: { enabled: !!address }
-  })
+  // Simulator mode: No other blockchain reads needed
 
-  // Read PONY balance
-  const { data: ponyBalanceData, refetch: refetchPonyBalance } = useReadContract({
-    address: PONY_TOKEN_ADDRESS,
-    abi: PONY_TOKEN_ABI,
-    functionName: 'balanceOf',
-    args: address ? [address] : undefined,
-    query: { enabled: !!address }
-  })
-
-  // Read base fee
-  const { data: baseFee } = useReadContract({
-    address: PIXEL_PONY_ADDRESS,
-    abi: PIXEL_PONY_ABI,
-    functionName: 'baseFeeAmount'
-  })
-
-  // Log base fee for debugging
+  // Update simulator balance display
   useEffect(() => {
-    if (baseFee && typeof baseFee === 'bigint') {
-      console.log('💰 Base Fee from contract:', baseFee.toString(), 'wei')
-      console.log('💰 Base Fee in ETH:', formatEther(baseFee))
-    }
-  }, [baseFee])
-
-  // Read allowance
-  const { data: allowance, refetch: refetchAllowance } = useReadContract({
-    address: PONY_TOKEN_ADDRESS,
-    abi: PONY_TOKEN_ABI,
-    functionName: 'allowance',
-    args: address && selectedBet ? [address, PIXEL_PONY_ADDRESS] : undefined,
-    query: { enabled: !!address && selectedBet !== null }
-  })
-
-  // Check if approved whenever allowance or selectedBet changes
-  useEffect(() => {
-    if (allowance && selectedBet) {
-      setIsApproved(allowance >= selectedBet)
-    } else {
-      setIsApproved(false)
-    }
-  }, [allowance, selectedBet])
-
-  // Update balances
-  useEffect(() => {
-    if (ethBalanceData) {
-      setEthBalance(parseFloat(formatEther(ethBalanceData.value)).toFixed(4))
-    }
-  }, [ethBalanceData])
-
-  useEffect(() => {
-    if (ponyBalanceData) {
-      setPonyBalance(formatPony(formatEther(ponyBalanceData)))
-    }
-  }, [ponyBalanceData])
+    setPonyBalance(formatPony(formatEther(simulatorBalance)))
+  }, [simulatorBalance])
 
   // Jackpot display
   const jackpotDisplay = gameStats && Array.isArray(gameStats)
@@ -186,54 +97,99 @@ function App() {
 
   const selectBet = (amount: bigint) => {
     setSelectedBet(amount)
-    setIsApproved(false)
     updateStatus()
   }
 
   const updateStatus = () => {
     if (selectedHorse !== null && selectedBet !== null) {
       const betDisplay = formatPony(formatEther(selectedBet))
-      setStatusMessage(`Ready! Pony #${selectedHorse + 1} with ${betDisplay} PONY bet. Click STEP 1 to approve!`)
+      setStatusMessage(`Ready! Pony #${selectedHorse + 1} with ${betDisplay} PONY bet. Click RACE to start!`)
     }
   }
 
-  const handleApprove = async () => {
-    if (!selectedBet) return
-    try {
-      setStatusMessage('💰 Approving PONY tokens...')
-      setApprovalHash(null) // Reset approval hash
-      writeContract({
-        address: PONY_TOKEN_ADDRESS,
-        abi: PONY_TOKEN_ABI,
-        functionName: 'approve',
-        args: [PIXEL_PONY_ADDRESS, selectedBet]
-      })
-    } catch (error) {
-      console.error('Approval error:', error)
-      setStatusMessage('❌ Approval failed')
+  // Generate random winners for simulator
+  const generateRandomWinners = (playerHorse: number): {winners: number[], playerWon: boolean} => {
+    // 33% chance player wins (if in top 3)
+    const playerWinChance = Math.random() < 0.33
+
+    const winners: number[] = []
+    const availableHorses = Array.from({length: 16}, (_, i) => i)
+
+    if (playerWinChance) {
+      // Player wins - put them in a random winning position
+      const winPosition = Math.floor(Math.random() * 3)
+      winners[winPosition] = playerHorse
+
+      // Remove player horse from available
+      availableHorses.splice(playerHorse, 1)
+
+      // Fill other positions
+      for (let i = 0; i < 3; i++) {
+        if (i !== winPosition) {
+          const randomIndex = Math.floor(Math.random() * availableHorses.length)
+          winners[i] = availableHorses[randomIndex]
+          availableHorses.splice(randomIndex, 1)
+        }
+      }
+    } else {
+      // Player loses - pick 3 random winners (not player)
+      availableHorses.splice(playerHorse, 1)
+      for (let i = 0; i < 3; i++) {
+        const randomIndex = Math.floor(Math.random() * availableHorses.length)
+        winners[i] = availableHorses[randomIndex]
+        availableHorses.splice(randomIndex, 1)
+      }
     }
+
+    return {winners, playerWon: playerWinChance}
   }
 
+  // Simulator: Race with local randomness
   const handleRace = async () => {
-    if (selectedHorse === null || !selectedBet || !baseFee || isRacing) return
+    if (selectedHorse === null || !selectedBet || isRacing) return
+
+    // Check if player has enough balance
+    if (simulatorBalance < selectedBet) {
+      setStatusMessage('❌ Not enough PONY! Refresh to get more demo tokens.')
+      return
+    }
+
     try {
-      setStatusMessage('🏁 Sending race transaction...')
+      setStatusMessage('🏁 Starting race...')
       setIsRacing(true)
+      setShowTrack(true)
 
-      console.log('🏇 Racing with params:')
+      // Deduct bet from simulator balance
+      setSimulatorBalance(prev => prev - selectedBet)
+
+      console.log('🎮 SIMULATOR MODE - Racing with:')
       console.log('  - Horse ID:', selectedHorse)
-      console.log('  - Bet Amount:', selectedBet.toString(), 'wei')
-      console.log('  - Bet Amount (PONY):', formatEther(selectedBet))
-      console.log('  - Base Fee (value):', baseFee?.toString(), 'wei')
-      console.log('  - Base Fee (ETH):', baseFee ? formatEther(baseFee as bigint) : 'N/A')
+      console.log('  - Bet Amount:', formatEther(selectedBet), 'PONY')
 
-      writeContract({
-        address: PIXEL_PONY_ADDRESS,
-        abi: PIXEL_PONY_ABI,
-        functionName: 'placeBetAndRace',
-        args: [BigInt(selectedHorse), selectedBet],
-        value: baseFee as bigint
-      })
+      // Wait a moment for track to show
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      // Generate random winners
+      const {winners, playerWon} = generateRandomWinners(selectedHorse)
+      console.log('🏆 Simulated winners:', winners)
+      console.log('🎉 Player won:', playerWon)
+
+      // Calculate payout (3x bet if won)
+      const payout = playerWon ? selectedBet * 3n : 0n
+
+      // Store result
+      setLastRaceResult({won: playerWon, payout, winners})
+
+      // If won, add payout to balance
+      if (playerWon) {
+        setSimulatorBalance(prev => prev + payout)
+      }
+
+      // Animate the race
+      await animateRace(winners)
+
+      setStatusMessage(playerWon ? '🎉 You won!' : '😢 Try again!')
+      setIsRacing(false)
     } catch (error) {
       console.error('Race error:', error)
       setStatusMessage('❌ Race failed')
@@ -242,200 +198,7 @@ function App() {
     }
   }
 
-  // Track approval transaction
-  useEffect(() => {
-    if (hash && !isRacing && !isApproved && !approvalHash) {
-      console.log('📝 Tracking approval hash:', hash)
-      setApprovalHash(hash)
-    }
-  }, [hash, isRacing, isApproved, approvalHash])
-
-  // Handle approval confirmation
-  useEffect(() => {
-    if (!approvalHash || !isConfirmed || approvalHash !== hash) return
-
-    console.log('✅ Approval confirmed! Refetching allowance...')
-    setStatusMessage('⏳ Waiting for approval to update...')
-
-    // Poll allowance until it's updated
-    const checkAllowance = async () => {
-      for (let i = 0; i < 15; i++) {
-        await new Promise(resolve => setTimeout(resolve, 800))
-        setStatusMessage(`⏳ Checking approval... (${i + 1}/15)`)
-        const result = await refetchAllowance()
-        console.log(`⏳ Checking allowance... attempt ${i + 1}/15, result:`, result.data?.toString())
-        if (result.data && selectedBet && result.data >= selectedBet) {
-          console.log('✅ Allowance updated!')
-          setStatusMessage('✅ Approved! Now click STEP 2: RACE!')
-          setApprovalHash(null)
-          return
-        }
-      }
-      console.log('⚠️ Approval polling timed out')
-      setStatusMessage('⚠️ Approval confirmed but not detected. Click STEP 2 to try racing.')
-      setApprovalHash(null)
-    }
-
-    checkAllowance()
-  }, [approvalHash, isConfirmed, hash, refetchAllowance, selectedBet])
-
-  // Handle race transaction confirmation and fetch results
-  useEffect(() => {
-    const handleRaceComplete = async () => {
-      if (!isConfirmed || !hash || !publicClient || !address) {
-        console.log('⏸️ Waiting for confirmation...', { isConfirmed, hash, publicClient: !!publicClient, address })
-        return
-      }
-      if (!isRacing || raceHash !== hash) {
-        console.log('⏸️ Not the right race...', { isRacing, raceHash, hash })
-        return
-      }
-
-      // Prevent processing the same race twice
-      if (processedRaces.current.has(hash)) {
-        console.log('⏭️ Race already processed, skipping...')
-        return
-      }
-
-      console.log('🎯 Processing race:', hash)
-      processedRaces.current.add(hash)
-
-      try {
-        console.log('🏁 Race transaction confirmed! Hash:', hash)
-        setStatusMessage('✅ Transaction confirmed! Animating race...')
-
-        // Show track
-        setShowTrack(true)
-
-        // Wait for transaction receipt with retries
-        console.log('⏳ Waiting for transaction receipt...')
-        setStatusMessage('⏳ Waiting for blockchain confirmation...')
-        let receipt = null
-        let attempts = 0
-        const maxAttempts = 30 // Wait up to ~15 seconds
-
-        while (!receipt && attempts < maxAttempts) {
-          try {
-            receipt = await publicClient.getTransactionReceipt({ hash })
-            console.log('✅ Receipt found!')
-          } catch (err) {
-            attempts++
-            console.log(`⏳ Attempt ${attempts}/${maxAttempts} - waiting for receipt...`)
-            setStatusMessage(`⏳ Confirming on blockchain... (${attempts}/${maxAttempts})`)
-            await new Promise(resolve => setTimeout(resolve, 500)) // Wait 500ms between attempts
-          }
-        }
-
-        if (!receipt) {
-          throw new Error('Transaction receipt not found after waiting. Please check BaseScan.')
-        }
-
-        console.log('📦 Transaction receipt:', receipt)
-        console.log('📦 Receipt status:', receipt.status)
-        console.log('📦 Receipt logs:', receipt.logs)
-
-        // Check if transaction was successful
-        if (receipt.status !== 'success') {
-          throw new Error('Transaction reverted or failed')
-        }
-
-        // Look for ALL logs from our contract
-        const raceLogs = receipt.logs.filter((log: any) =>
-          log.address.toLowerCase() === PIXEL_PONY_ADDRESS.toLowerCase()
-        )
-
-        console.log('🎯 Found race logs:', raceLogs)
-
-        if (raceLogs.length === 0) {
-          throw new Error('No events found from PixelPony contract in transaction logs')
-        }
-
-        // Try using viem's decodeEventLog on each log
-        const { decodeEventLog } = await import('viem')
-
-        let raceExecutedEvent = null
-        for (const log of raceLogs) {
-          try {
-            console.log('🔍 Trying to decode log:', log)
-            console.log('📊 Log topics:', log.topics)
-            console.log('📊 Log data:', log.data)
-
-            const decodedLog = decodeEventLog({
-              abi: PIXEL_PONY_ABI,
-              data: log.data,
-              topics: log.topics,
-              strict: false
-            })
-
-            console.log('✅ Successfully decoded:', decodedLog)
-
-            if (decodedLog.eventName === 'RaceExecuted') {
-              raceExecutedEvent = decodedLog
-              break
-            }
-          } catch (err) {
-            console.log('⚠️ Could not decode this log:', err)
-            // Continue to next log
-          }
-        }
-
-        if (!raceExecutedEvent) {
-          throw new Error('RaceExecuted event not found in any logs. Check if contract ABI is correct.')
-        }
-
-        console.log('🔍 Decoded RaceExecuted event:', raceExecutedEvent)
-
-        const { winners, payout, won } = raceExecutedEvent.args as any
-
-        console.log('🏆 Winners:', winners)
-        console.log('💰 Payout:', payout)
-        console.log('🎉 Won:', won)
-
-        const winnerIds = winners.map((w: bigint) => Number(w))
-
-        // Animate the race with actual winners (announcement is shown in animation)
-        await animateRace(winnerIds)
-
-        // Keep track open so user can see the announcement
-        // They can close it manually with the X button
-
-        setStatusMessage(won ? '🎉 You won!' : '😢 Better luck next time!')
-
-        // Refresh balances
-        refetchJackpot()
-        refetchPonyBalance()
-        refetchEthBalance()
-
-        // Reset race state
-        setIsRacing(false)
-        setRaceHash(null)
-        setIsApproved(false)
-        resetWrite()
-
-        // Prevent re-running with the same hash
-        return
-      } catch (error: any) {
-        console.error('❌ Error in race handler:', error)
-        console.error('❌ Error message:', error?.message)
-        console.error('❌ Error stack:', error?.stack)
-        setStatusMessage(`⚠️ Error: ${error?.message || 'Unknown error'}. Check console!`)
-        setTimeout(() => {
-          setShowTrack(false)
-          setIsRacing(false)
-          setRaceHash(null)
-        }, 5000)
-      }
-    }
-
-    handleRaceComplete()
-  }, [isConfirmed, hash, publicClient, address, isRacing, raceHash, refetchJackpot, refetchPonyBalance, refetchEthBalance, resetWrite])
-
-  // Track when we start a race transaction
-  useEffect(() => {
-    if (hash && isRacing && !raceHash) {
-      setRaceHash(hash)
-    }
-  }, [hash, isRacing, raceHash])
+  // Note: Old blockchain transaction monitoring code removed for simulator mode
 
   // Animate race - matching working test-race.html version
   const animateRace = (winners: number[]): Promise<void> => {
@@ -505,8 +268,11 @@ function App() {
 
           // Show winner announcement
           const announcement = document.getElementById('raceAnnouncement')
-          if (announcement && selectedHorse !== null) {
-            const playerWon = winners.includes(selectedHorse)
+          if (announcement && selectedHorse !== null && lastRaceResult) {
+            const playerWon = lastRaceResult.won
+            const payout = lastRaceResult.payout
+            const payoutDisplay = formatPony(formatEther(payout))
+            const betDisplay = selectedBet ? formatPony(formatEther(selectedBet)) : '0'
 
             announcement.innerHTML = `
               🏆 RACE COMPLETE! 🏆<br>
@@ -517,7 +283,17 @@ function App() {
                 🥉 Pony #${winners[2] + 1}
               </div>
               <div style="margin-top: 15px; font-size: 20px; color: ${playerWon ? '#4ade80' : '#f87171'};">
-                ${playerWon ? '🎉 YOU WON! 🎉' : 'Better luck next time!'}
+                ${playerWon
+                  ? `🎉 YOU WON! 🎉<br><div style="font-size: 16px; margin-top: 10px;">You would have won ${payoutDisplay} PONY playing for real!</div>`
+                  : `Better luck next time!<br><div style="font-size: 16px; margin-top: 10px;">You would have lost ${betDisplay} PONY playing for real.</div>`}
+              </div>
+              <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: center;">
+                <button onclick="location.reload()" style="padding: 10px 20px; background: #4ade80; color: black; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold;">
+                  🎮 PLAY AGAIN
+                </button>
+                <button onclick="window.open('https://pxpony.com', '_blank')" style="padding: 10px 20px; background: #ff6b6b; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold;">
+                  💰 PLAY FOR REAL
+                </button>
               </div>
             `
             announcement.style.display = 'block'
@@ -536,59 +312,29 @@ function App() {
     if (announcement) {
       announcement.style.display = 'none'
     }
-    // Refresh balances when closing
-    refetchJackpot()
-    refetchPonyBalance()
-    refetchEthBalance()
   }
 
-  const canApprove = selectedHorse !== null && selectedBet !== null && address && !isApproved && !isRacing
-  const canRace = isApproved && !isWritePending && !isRacing
+  const canRace = selectedHorse !== null && selectedBet !== null && !isRacing
 
   return (
     <div className="container">
       {/* Header */}
       <div className="header">
         <img src="/logo.png" alt="Pixel Ponies Logo" />
-        <div className="tagline">16 PIXELATED PONIES RACING ON-CHAIN FOR NO REASON</div>
+        <div className="tagline">16 PIXELATED PONIES RACING - FREE DEMO MODE</div>
         <div className="wallet-info">
           {isConnected && address
-            ? `${address.slice(0, 6)}...${address.slice(-4)} | Base`
-            : 'Not connected'}
+            ? `${address.slice(0, 6)}...${address.slice(-4)} | Demo Mode`
+            : 'Demo Mode'}
         </div>
-        {isConnected && address && (
-          <div className="balance-info">
-            <span>💰 {ethBalance || '0.0000'} ETH</span>
-            <span>🐴 {ponyBalance || '0'} PONY</span>
-          </div>
-        )}
-        {!isConnected && (
-          <div style={{ marginTop: '10px' }}>
-            {connectors.map((connector) => (
-              <button
-                key={connector.id}
-                onClick={() => connect({ connector })}
-                style={{
-                  padding: '10px 20px',
-                  margin: '5px',
-                  background: '#ff6b6b',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '5px',
-                  cursor: 'pointer',
-                  fontSize: '10px'
-                }}
-              >
-                Connect {connector.name}
-              </button>
-            ))}
-          </div>
-        )}
+        <div className="balance-info">
+          <span>🐴 {ponyBalance || '0'} PONY (Demo)</span>
+        </div>
       </div>
 
       {/* Jackpot Display */}
       <div className="jackpot-display">
-        <div className="jackpot-label">💰 JACKPOT 💰</div>
+        <div className="jackpot-label">💰 DEMO JACKPOT 💰</div>
         <div className="jackpot-amount">{jackpotDisplay}</div>
         <div style={{ fontSize: '8px', marginTop: '5px' }}>PONY</div>
       </div>
@@ -615,7 +361,7 @@ function App() {
 
       {/* Bet Selection */}
       <div className="bet-section">
-        <div className="bet-label">SELECT BET AMOUNT</div>
+        <div className="bet-label">SELECT BET AMOUNT (Demo)</div>
         <div className="bet-buttons">
           {BET_AMOUNTS.map((bet) => (
             <button
@@ -629,12 +375,9 @@ function App() {
         </div>
       </div>
 
-      {/* Action Buttons */}
-      <button className="race-btn" onClick={handleApprove} disabled={!canApprove || isWritePending}>
-        {isApproved ? '✅ APPROVED!' : '💰 STEP 1: APPROVE PONY'}
-      </button>
+      {/* Action Button */}
       <button className="race-btn" onClick={handleRace} disabled={!canRace}>
-        🏁 STEP 2: RACE!
+        🏁 RACE! (FREE DEMO)
       </button>
 
       {/* Race Track */}
