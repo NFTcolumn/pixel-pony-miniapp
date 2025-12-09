@@ -116,17 +116,19 @@ function App() {
   }
 
   // Generate random winners for simulator
-  const generateRandomWinners = (playerHorse: number): {winners: number[], playerWon: boolean} => {
+  const generateRandomWinners = (playerHorse: number): {winners: number[], playerWon: boolean, playerPosition: number} => {
     // 33% chance player wins (if in top 3)
     const playerWinChance = Math.random() < 0.33
 
     const winners: number[] = []
     const availableHorses = Array.from({length: 16}, (_, i) => i)
+    let playerPosition = -1 // -1 means didn't win
 
     if (playerWinChance) {
       // Player wins - put them in a random winning position
       const winPosition = Math.floor(Math.random() * 3)
       winners[winPosition] = playerHorse
+      playerPosition = winPosition // 0=1st, 1=2nd, 2=3rd
 
       // Remove player horse from available
       availableHorses.splice(playerHorse, 1)
@@ -149,7 +151,7 @@ function App() {
       }
     }
 
-    return {winners, playerWon: playerWinChance}
+    return {winners, playerWon: playerWinChance, playerPosition}
   }
 
   // Simulator: Race with local randomness
@@ -178,15 +180,25 @@ function App() {
       await new Promise(resolve => setTimeout(resolve, 500))
 
       // Generate random winners
-      const {winners, playerWon} = generateRandomWinners(selectedHorse)
+      const {winners, playerWon, playerPosition} = generateRandomWinners(selectedHorse)
       console.log('🏆 Simulated winners:', winners)
-      console.log('🎉 Player won:', playerWon)
+      console.log('🎉 Player won:', playerWon, 'Position:', playerPosition)
 
-      // Calculate payout (3x bet if won)
-      const payout = playerWon ? selectedBet * 3n : 0n
+      // Calculate payout based on position:
+      // 1st place: 10x bet, 2nd place: 2.5x bet, 3rd place: 1x bet (break even)
+      let payout = 0n
+      if (playerWon && playerPosition === 0) {
+        payout = selectedBet * 10n // 1st place
+      } else if (playerWon && playerPosition === 1) {
+        payout = (selectedBet * 25n) / 10n // 2nd place (2.5x)
+      } else if (playerWon && playerPosition === 2) {
+        payout = selectedBet // 3rd place (1x - break even)
+      }
+
+      console.log('💰 Payout:', formatEther(payout), 'PONY')
 
       // Animate the race (payout will be added after animation)
-      await animateRace(winners, playerWon, payout, selectedBet)
+      await animateRace(winners, playerWon, payout, selectedBet, playerPosition)
 
       // If won, add payout to balance AFTER race completes
       if (playerWon) {
@@ -206,7 +218,7 @@ function App() {
   // Note: Old blockchain transaction monitoring code removed for simulator mode
 
   // Animate race - matching working test-race.html version
-  const animateRace = (winners: number[], playerWon: boolean, payout: bigint, betAmount: bigint): Promise<void> => {
+  const animateRace = (winners: number[], playerWon: boolean, payout: bigint, betAmount: bigint, playerPosition: number): Promise<void> => {
     return new Promise((resolve) => {
       console.log('🎬 Starting race animation...')
       console.log('🏆 Winners to highlight:', winners)
@@ -277,17 +289,31 @@ function App() {
             const payoutDisplay = formatPony(formatEther(payout))
             const betDisplay = formatPony(formatEther(betAmount))
 
+            // Determine position text and multiplier
+            let positionText = ''
+            let multiplierText = ''
+            if (playerWon && playerPosition === 0) {
+              positionText = '🥇 1ST PLACE'
+              multiplierText = '10x'
+            } else if (playerWon && playerPosition === 1) {
+              positionText = '🥈 2ND PLACE'
+              multiplierText = '2.5x'
+            } else if (playerWon && playerPosition === 2) {
+              positionText = '🥉 3RD PLACE'
+              multiplierText = '1x'
+            }
+
             announcement.innerHTML = `
               🏆 RACE COMPLETE! 🏆<br>
               <div style="margin-top: 15px; font-size: 18px;">
                 Winners:<br>
-                🥇 Pony #${winners[0] + 1}<br>
-                🥈 Pony #${winners[1] + 1}<br>
-                🥉 Pony #${winners[2] + 1}
+                🥇 Pony #${winners[0] + 1} (10x)<br>
+                🥈 Pony #${winners[1] + 1} (2.5x)<br>
+                🥉 Pony #${winners[2] + 1} (1x)
               </div>
               <div style="margin-top: 15px; font-size: 20px; color: ${playerWon ? '#4ade80' : '#f87171'};">
                 ${playerWon
-                  ? `🎉 YOU WON! 🎉<br><div style="font-size: 16px; margin-top: 10px;">You would have won ${payoutDisplay} PONY playing for real!</div>`
+                  ? `🎉 YOU WON ${positionText}! 🎉<br><div style="font-size: 16px; margin-top: 10px;">You would have won ${payoutDisplay} PONY (${multiplierText} your bet) playing for real!</div>`
                   : `Better luck next time!<br><div style="font-size: 16px; margin-top: 10px;">You would have lost ${betDisplay} PONY playing for real.</div>`}
               </div>
               <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: center;">
