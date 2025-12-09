@@ -47,7 +47,7 @@ function App() {
 
   // Simulator mode state
   const [simulatorBalance, setSimulatorBalance] = useState<bigint>(parseEther('100000000000')) // Start with 100B PONY
-  const [lastRaceResult, setLastRaceResult] = useState<{won: boolean, payout: bigint, winners: number[]} | null>(null)
+  const [showTelegramPopup, setShowTelegramPopup] = useState(false)
 
   // Initialize Farcaster SDK
   useEffect(() => {
@@ -84,6 +84,14 @@ function App() {
   useEffect(() => {
     setPonyBalance(formatPony(formatEther(simulatorBalance)))
   }, [simulatorBalance])
+
+  // Check for low balance and show telegram popup
+  useEffect(() => {
+    const minBet = parseEther('10000000000') // 10B PONY (minimum bet)
+    if (simulatorBalance < minBet && !isRacing) {
+      setShowTelegramPopup(true)
+    }
+  }, [simulatorBalance, isRacing])
 
   // Jackpot display
   const jackpotDisplay = gameStats && Array.isArray(gameStats)
@@ -177,16 +185,13 @@ function App() {
       // Calculate payout (3x bet if won)
       const payout = playerWon ? selectedBet * 3n : 0n
 
-      // Store result
-      setLastRaceResult({won: playerWon, payout, winners})
+      // Animate the race (payout will be added after animation)
+      await animateRace(winners, playerWon, payout, selectedBet)
 
-      // If won, add payout to balance
+      // If won, add payout to balance AFTER race completes
       if (playerWon) {
         setSimulatorBalance(prev => prev + payout)
       }
-
-      // Animate the race
-      await animateRace(winners)
 
       setStatusMessage(playerWon ? '🎉 You won!' : '😢 Try again!')
       setIsRacing(false)
@@ -201,7 +206,7 @@ function App() {
   // Note: Old blockchain transaction monitoring code removed for simulator mode
 
   // Animate race - matching working test-race.html version
-  const animateRace = (winners: number[]): Promise<void> => {
+  const animateRace = (winners: number[], playerWon: boolean, payout: bigint, betAmount: bigint): Promise<void> => {
     return new Promise((resolve) => {
       console.log('🎬 Starting race animation...')
       console.log('🏆 Winners to highlight:', winners)
@@ -268,11 +273,9 @@ function App() {
 
           // Show winner announcement
           const announcement = document.getElementById('raceAnnouncement')
-          if (announcement && selectedHorse !== null && lastRaceResult) {
-            const playerWon = lastRaceResult.won
-            const payout = lastRaceResult.payout
+          if (announcement && selectedHorse !== null) {
             const payoutDisplay = formatPony(formatEther(payout))
-            const betDisplay = selectedBet ? formatPony(formatEther(selectedBet)) : '0'
+            const betDisplay = formatPony(formatEther(betAmount))
 
             announcement.innerHTML = `
               🏆 RACE COMPLETE! 🏆<br>
@@ -403,6 +406,30 @@ function App() {
           })}
         </div>
       </div>
+
+      {/* Telegram Popup for Low Balance */}
+      {showTelegramPopup && (
+        <div className="popup-overlay" onClick={() => setShowTelegramPopup(false)}>
+          <div className="popup-content" onClick={(e) => e.stopPropagation()}>
+            <button className="popup-close" onClick={() => setShowTelegramPopup(false)}>✕</button>
+            <div className="popup-title">🐴 Need PONY Tokens? 🐴</div>
+            <div className="popup-message">
+              You're out of demo PONY! Get 100M real PONY tokens to play for real prizes!
+            </div>
+            <a
+              href="https://t.me/pixelponies"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="telegram-btn"
+            >
+              💬 Join Telegram & Get 100M PONY
+            </a>
+            <div className="popup-instructions">
+              Use the /register command in Telegram to receive your tokens!
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   )

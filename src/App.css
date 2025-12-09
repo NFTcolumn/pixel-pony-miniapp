@@ -375,3 +375,89 @@
 .hidden {
     display: none;
 }
+
+/* Telegram Popup Styles */
+.popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.popup-content {
+    background: #ffffff;
+    border: 3px solid #ff6b6b;
+    border-radius: 15px;
+    padding: 30px;
+    max-width: 400px;
+    width: 100%;
+    position: relative;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    text-align: center;
+}
+
+.popup-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: transparent;
+    border: none;
+    font-size: 24px;
+    color: #666;
+    cursor: pointer;
+    padding: 5px;
+    line-height: 1;
+}
+
+.popup-close:hover {
+    color: #ff6b6b;
+}
+
+.popup-title {
+    font-size: 20px;
+    font-weight: bold;
+    color: #ff6b6b;
+    margin-bottom: 15px;
+}
+
+.popup-message {
+    font-size: 14px;
+    color: #333;
+    margin-bottom: 20px;
+    line-height: 1.6;
+}
+
+.telegram-btn {
+    display: inline-block;
+    padding: 15px 25px;
+    background: #0088cc;
+    color: #ffffff;
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    transition: all 0.2s;
+    margin-bottom: 15px;
+}
+
+.telegram-btn:hover {
+    background: #006699;
+    transform: scale(1.05);
+}
+
+.telegram-btn:active {
+    transform: scale(0.95);
+}
+
+.popup-instructions {
+    font-size: 12px;
+    color: #666;
+    font-style: italic;
+}
